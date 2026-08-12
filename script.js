@@ -50,9 +50,10 @@ const scenes = [
 ];
 
 const narrativeScenes = [
-  {id:'intro1',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'Welcome.\\nThis is not a list of logos. It is a working record.',next:'intro2'},
-  {id:'intro2',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'It begins with a simple question: how do you turn a promising contact into a useful, lasting partnership?',next:'introChoice',secret:1},
-  {id:'introChoice',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'We can follow the journey from the beginning, inspect the operating playbook, or explore the record at your own pace.',choices:[{label:'START AT THE BEGINNING',next:'beginning1'},{label:'SHOW ME THE PLAYBOOK',next:'ops1'},{label:'EXPLORE THE ARCHIVE',next:'hub'}]},
+  {id:'intro1',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'Welcome to the Archive.\\nYou made it.',next:'intro2'},
+  {id:'intro2',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'I keep the pieces that matter here: the conversations, the systems, and the work that kept moving after the screen went dark.',next:'intro3'},
+  {id:'intro3',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:"Raiyan leaves a clearer trail than he admits.\\nWant to dive into Raiyan's lore?",next:'introChoice',secret:1},
+  {id:'introChoice',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'Choose carefully. The beginning explains the rest, but every corridor has something useful to reveal.',choices:[{label:'YES — SHOW ME',next:'beginning1'},{label:'THE PLAYBOOK FIRST',next:'ops1'},{label:'I WILL LOOK AROUND',next:'hub'}]},
   {id:'hub',chapter:'ARCHIVE // INDEX',speaker:'* GUIDE',text:'Pick a thread. Each one answers a different practical question about the work.',choices:[{label:'HOW THE JOURNEY STARTED',next:'beginning1'},{label:'HOW PARTNERSHIPS ARE BUILT',next:'ops1'},{label:'WHAT THE WORK PRODUCED',next:'outcomes1'}]},
   {id:'beginning1',chapter:'JOURNEY // 01',speaker:'* GUIDE',text:'The work started with the unglamorous part: research.\\nFinding publishers and creators whose audiences genuinely fit the offer.',next:'beginning2'},
   {id:'beginning2',chapter:'JOURNEY // 02',speaker:'* GUIDE',text:'A list alone is not a pipeline. Each lead needed context: audience, region, channel, relevance and a reason to reach out.',next:'beginning3'},
