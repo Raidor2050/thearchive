@@ -5,15 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Raiyan Kabir — an interactive monochrome archive of affiliate marketing, partnerships, growth operations, data and campaign optimization.">
-<title>RAIYAN // ARCHIVE</title>
+<title>V1.1 // THE ARCHIVE</title>
 <link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="https://cartr.gitlab.io/undertale-fonts/webfonts/stylesheet.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="games.css">
 </head>
 <body>
 <main id="app" class="app">
   <section id="startScreen" class="start-screen" aria-label="Start screen">
     <button id="beginBtn" class="begin-btn" type="button" aria-label="Press Enter to begin the archive experience">Press Enter</button>
+    <div class="start-version" aria-hidden="true">V1.1</div>
   </section>
 
   <section id="experience" class="experience hidden" aria-label="Interactive portfolio experience">
@@ -35,6 +37,8 @@
       </article>
 
       <div class="choices" id="choices" aria-label="Choices"></div>
+
+      <div id="gamePanel" class="game-panel" aria-label="Mini drill"></div>
     </div>
 
     <nav class="icon-nav" aria-label="Archive controls">
@@ -43,6 +47,7 @@
       <button class="icon-btn" id="toolkitBtn" type="button" aria-label="Toolkit" data-label="TOOLKIT"><span aria-hidden="true">◇</span></button>
       <button class="icon-btn" id="profileBtn" type="button" aria-label="Profile" data-label="PROFILE"><span aria-hidden="true">◎</span></button>
       <button class="icon-btn" id="contactBtn" type="button" aria-label="Contact" data-label="CONTACT"><span aria-hidden="true">✉</span></button>
+      <button class="icon-btn" id="gamesBtn" type="button" aria-label="Games" data-label="GAMES"><span aria-hidden="true">▤</span></button>
       <button class="icon-btn locked" id="achievementsBtn" type="button" aria-label="Achievements" data-label="ACHIEVEMENTS" hidden><span aria-hidden="true">✦</span></button>
     </nav>
 
@@ -69,6 +74,7 @@
 </aside>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="games.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ python -m http.server
 - Start on the **Press Enter** screen, then advance through the dialogue with `Enter`, `Space` or `Right Arrow`.
 - Choose with `1`–`3` (or click the choices).
 - Go back with `Backspace` or `Left Arrow`.
-- Open rooms with the keyboard: `Q` quests, `T` toolkit, `P` profile, `C` contact, `H` home.
+- Open rooms with the keyboard: `Q` quests, `T` toolkit, `P` profile, `C` contact, `H` home, `G` games.
 - Press `Esc` (or click outside a popup) to close it.
 
 ## Features
@@ -26,13 +26,16 @@ python -m http.server
 - **Achievements** unlock after enough presses.
 - Sound on/off toggle with retro bleeps and ambient loop.
 - Progress is saved locally in the browser (`localStorage`).
+- **V1.1 mini drills** — five short games that appear when the Guide touches their topic: **Lead Sort**, **Email Build**, **Partner Call**, **Close the Deal** and **Auto Flow**. Each is skippable, scores with name entry, and keeps a top-10 leaderboard per game.
 
 ## Structure
 
 ```
 index.html   — app shell and start screen
 styles.css   — monochrome pixel UI
+games.css    — V1.1 mini drill UI
 script.js    — dialogue data, state, rooms and audio
+games.js     — V1.1 mini drill engine and leaderboards
 assets/      — favicon
 ```
 
