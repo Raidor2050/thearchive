@@ -6,8 +6,8 @@ const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],keysU
 const GAMES = {
   leadSort: {
     id:'leadSort', title:'LEAD INVADERS', tag:'LEAD SOURCING',
-    desc:'Classic invaders. Shoot the fit leads. Avoid wasting fire on the noise.',
-    tips:['Shoot the fit leads. Skip the noise.','Audience fit comes first.','A list alone is not a pipeline.','Keep your combo alive.','The formation speeds up as it thins out.']
+    desc:'Classic invaders. Shoot the fit leads, dodge the return fire, skip the noise.',
+    tips:['Shoot the fit leads. Skip the noise.','Audience fit comes first.','A list alone is not a pipeline.','Keep your combo alive.','Dodge the return fire.']
   },
   emailBuild: {
     id:'emailBuild', title:'EMAIL BUILD', tag:'OUTREACH',
@@ -41,6 +41,21 @@ function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function shuffle(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function sfx(freq,dur,type,vol,slideTo){
+  if(typeof state!=='undefined'&&state&&state.sound===false)return;
+  try{ensureAudio()}catch(e){}
+  if(typeof audioCtx==='undefined'||!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type||'square';
+  const t=audioCtx.currentTime;
+  o.frequency.setValueAtTime(freq,t);
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+  g.gain.setValueAtTime(vol||.02,t);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(t);o.stop(t+dur+.02);
+}
 
 function isGameBlocking(){return gameState.open}
 function getBoard(id){if(!state.leaderboard)state.leaderboard={};if(!state.leaderboard[id])state.leaderboard[id]=[];return state.leaderboard[id]}
@@ -139,25 +154,26 @@ GAMES.leadSort.build=function(host,done){
   const W=620,H=300,WID=24,HT=21,cols=6,rows=4;
   const c=el('canvas','li-canvas');c.width=W;c.height=H;
   const ctx=c.getContext('2d');
-  let score=0,combo=0,keep=0,dead=false,last=performance.now(),timeLeft=60;
+  let score=0,combo=0,keep=0,lives=3,dead=false,last=performance.now(),timeLeft=60,invuln=0,enemyTimer=900;
   const scoreEl=el('div','game-stat','SCORE · 0');
   const keepEl=el('div','game-stat','CAPTURED · 0');
   const comboEl=el('div','game-stat','COMBO · x0');
+  const livesEl=el('div','game-stat','LIVES · '+lives);
   const timeEl=el('div','game-stat','TIME · 60');
-  const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(scoreEl);hud.appendChild(timeEl);
-  host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · SHOOT THE FIT LEADS, SKIP THE NOISE'));
+  const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);hud.appendChild(timeEl);
+  host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · DODGE THE RETURN FIRE · SHOOT THE FIT LEADS'));
   host.appendChild(hud);host.appendChild(c);
   const people=[];
   let fitLeft=0;
   for(let r=0;r<rows;r++)for(let i=0;i<cols;i++){
     const fit=(r+i)%2===0;
     if(fit)fitLeft++;
-    people.push({x:82+i*84,y:34+r*50,w:WID,h:HT,fit,alive:true});
+    people.push({x:82+i*84,y:34+r*50,w:WID,h:HT,fit,alive:true,seed:Math.random()*6.28});
   }
   const player={x:W/2-20,w:40};
-  let bullets=[],fired=false;
+  let bullets=[],shots=[],fired=false;
   const keyState={left:false,right:false};
-  const timer=setInterval(()=>{timeLeft--;timeEl.textContent='TIME · '+Math.max(0,timeLeft);if(timeLeft<=0)finish()},1000);
+  const timer=setInterval(()=>{timeLeft--;timeEl.textContent='TIME · '+Math.max(0,timeLeft);if(timeLeft<=0){if(!dead){sfx(200,.5,'sawtooth',.04,80);finish()}}},1000);
   function finish(){if(dead)return;dead=true;clearInterval(timer);done(score)}
   function frame(now){
     const dt=Math.min(50,now-last);last=now;
@@ -166,6 +182,30 @@ GAMES.leadSort.build=function(host,done){
       if(keyState.right)player.x=Math.min(W-player.w,player.x+4.4*(dt/16.6));
       bullets.forEach(b=>b.y-=6.2*(dt/16.6));
       bullets=bullets.filter(b=>b.y>-14);
+      const alive=people.filter(v=>v.alive);
+      enemyTimer-=dt;
+      if(alive.length&&enemyTimer<=0){
+        const shooter=pick(alive);
+        shots.push({x:shooter.x+WID/2-1.5,y:shooter.y+HT});
+        enemyTimer=Math.max(420,1200-alive.length*34);
+        sfx(300,.06,'triangle',.015,180);
+      }
+      shots.forEach(b=>b.y+=3.6*(dt/16.6));
+      shots=shots.filter(b=>b.y<H-4);
+      for(const s of shots){
+        if(s.y>H-20&&s.y<H-4&&s.x>player.x&&s.x<player.x+player.w){
+          s.y=H;
+          if(invuln<=0&&lives>0){
+            lives--;combo=0;invuln=1300;
+            livesEl.textContent='LIVES · '+lives;
+            comboEl.textContent='COMBO · x0';
+            sfx(140,.3,'sawtooth',.05,70);
+            if(lives<=0){sfx(120,.5,'sawtooth',.06,55);finish();return}
+          }
+          break;
+        }
+      }
+      invuln-=dt;
       for(const b of bullets){
         const hit=people.find(v=>v.alive&&b.x<v.x+WID&&b.x+4>v.x&&b.y<v.y+HT&&b.y+10>v.y);
         if(hit){
@@ -175,22 +215,24 @@ GAMES.leadSort.build=function(host,done){
             keepEl.textContent='CAPTURED · '+keep;
             scoreEl.textContent='SCORE · '+score;
             comboEl.textContent='COMBO · x'+combo;
-            if(fitLeft<=0)finish();
+            sfx(660,.1,'square',.03,1320);
+            if(fitLeft<=0){sfx(660,.5,'square',.04,1320);finish();return}
           }else{
             combo=0;score=Math.max(0,score-40);
             scoreEl.textContent='SCORE · '+score;
             comboEl.textContent='COMBO · x0';
+            sfx(180,.2,'sawtooth',.04,90);
           }
           break;
         }
       }
       bullets=bullets.filter(b=>b.y>-14);
     }
-    draw();
+    draw(now);
     if(!dead)gameState.raf=requestAnimationFrame(frame);
   }
-  function drawPerson(v){
-    const x=v.x,y=v.y;
+  function drawPerson(v,off){
+    const x=v.x,y=v.y+off;
     ctx.fillStyle=v.fit?'#fff':'rgba(255,255,255,.16)';
     ctx.fillRect(x+8,y,8,9);
     ctx.fillRect(x+5,y+9,14,7);
@@ -204,21 +246,24 @@ GAMES.leadSort.build=function(host,done){
       ctx.fillRect(x+9,y+3,6,2);
     }
   }
-  function draw(){
+  function draw(now){
     ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
     ctx.fillRect(0,H-2,W,2);
-    ctx.fillStyle='#fff';
-    ctx.fillRect(player.x+16,H-26,8,8);
-    ctx.fillRect(player.x,H-18,player.w,6);
-    ctx.fillRect(player.x+6,H-12,player.w-12,4);
-    people.forEach(v=>{if(v.alive)drawPerson(v)});
-    bullets.forEach(b=>ctx.fillRect(b.x,b.y,4,10));
+    people.forEach(v=>{if(v.alive)drawPerson(v,Math.sin(now/260+v.seed)*1.6)});
+    if(invuln<=0||Math.floor(now/90)%2===0){
+      ctx.fillStyle='#fff';
+      ctx.fillRect(player.x+16,H-26,8,8);
+      ctx.fillRect(player.x,H-18,player.w,6);
+      ctx.fillRect(player.x+6,H-12,player.w-12,4);
+    }
+    bullets.forEach(b=>{ctx.fillStyle='#fff';ctx.fillRect(b.x,b.y,4,10)});
+    shots.forEach(b=>{ctx.fillStyle='#fff';ctx.fillRect(b.x-1,b.y,3,9);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(b.x+1,b.y-2,1,3)});
   }
   onKey(e=>{
     const k=e.key;
     if(k==='ArrowLeft'||k.toLowerCase()==='a'){e.preventDefault();keyState.left=true}
     else if(k==='ArrowRight'||k.toLowerCase()==='d'){e.preventDefault();keyState.right=true}
-    else if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();if(!fired&&!dead){fired=true;bullets.push({x:player.x+player.w/2-2,y:H-34});setTimeout(()=>fired=false,200)}}
+    else if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();if(!fired&&!dead){fired=true;bullets.push({x:player.x+player.w/2-2,y:H-34});sfx(900,.08,'square',.02,400);setTimeout(()=>fired=false,200)}}
   });
   onKeyUp(e=>{
     const k=e.key;
