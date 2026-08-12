@@ -70,6 +70,7 @@ function startGame(id){
   g.build(body,done);
   const card=g$('dialogueCard');
   card.classList.add('game-mode');
+  const nav=g$('iconNav');if(nav)nav.classList.add('nav-side');
   requestAnimationFrame(()=>requestAnimationFrame(()=>panel.classList.add('open')));
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -118,7 +119,7 @@ function showResults(score){
   input.focus();
 }
 function skipGame(){if(!gameState.open)return;stopTips();stopLoop();showResults(null)}
-function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');const card=g$('dialogueCard');panel.classList.remove('open');card.classList.remove('game-mode');gameState.generation++;const gen=gameState.generation;setTimeout(()=>{if(gen===gameState.generation)panel.innerHTML=''},500);gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
+function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');const card=g$('dialogueCard');panel.classList.remove('open');card.classList.remove('game-mode');const nav=g$('iconNav');if(nav)nav.classList.remove('nav-side');gameState.generation++;const gen=gameState.generation;setTimeout(()=>{if(gen===gameState.generation)panel.innerHTML=''},500);gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
 
 function openLeaderboard(id){
   const g=GAMES[id];if(!g)return;
@@ -135,46 +136,38 @@ function openGamesRoom(){
 
 /* ---- 1. LEAD INVADERS ---- */
 GAMES.leadSort.build=function(host,done){
-  const W=620,H=300,CW=20,CH=16,cols=8,rows=4;
+  const W=620,H=300,WID=24,HT=21,cols=6,rows=4;
   const c=el('canvas','li-canvas');c.width=W;c.height=H;
   const ctx=c.getContext('2d');
-  let score=0,combo=0,keep=0,dead=false,last=performance.now();
+  let score=0,combo=0,keep=0,dead=false,last=performance.now(),timeLeft=60;
   const scoreEl=el('div','game-stat','SCORE · 0');
   const keepEl=el('div','game-stat','CAPTURED · 0');
   const comboEl=el('div','game-stat','COMBO · x0');
-  const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · SOLID = FIT LEAD, HOLLOW = NOISE'));
+  const timeEl=el('div','game-stat','TIME · 60');
+  const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(scoreEl);hud.appendChild(timeEl);
+  host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · SHOOT THE FIT LEADS, SKIP THE NOISE'));
   host.appendChild(hud);host.appendChild(c);
-  const invaders=[];
+  const people=[];
   let fitLeft=0;
   for(let r=0;r<rows;r++)for(let i=0;i<cols;i++){
     const fit=(r+i)%2===0;
     if(fit)fitLeft++;
-    invaders.push({x:52+i*68,y:36+r*42,w:CW,h:CH,fit,alive:true,dir:1});
+    people.push({x:82+i*84,y:34+r*50,w:WID,h:HT,fit,alive:true});
   }
   const player={x:W/2-20,w:40};
-  let bullets=[],fired=false,stepT=0;
+  let bullets=[],fired=false;
   const keyState={left:false,right:false};
-  function finish(){dead=true;done(score)}
+  const timer=setInterval(()=>{timeLeft--;timeEl.textContent='TIME · '+Math.max(0,timeLeft);if(timeLeft<=0)finish()},1000);
+  function finish(){if(dead)return;dead=true;clearInterval(timer);done(score)}
   function frame(now){
     const dt=Math.min(50,now-last);last=now;
     if(!dead){
       if(keyState.left)player.x=Math.max(0,player.x-4.4*(dt/16.6));
       if(keyState.right)player.x=Math.min(W-player.w,player.x+4.4*(dt/16.6));
-      const alive=invaders.filter(v=>v.alive);
-      stepT+=dt;
-      const interval=Math.max(200,780-alive.length*20);
-      if(stepT>=interval){
-        stepT=0;
-        let edge=false;
-        alive.forEach(v=>{v.x+=v.dir*16;if(v.x<6){v.x=6;v.dir=1;edge=true}if(v.x>W-6-CW){v.x=W-6-CW;v.dir=-1;edge=true}});
-        if(edge)alive.forEach(v=>{v.y+=16});
-        if(alive.some(v=>v.y+CH>=H-24)){finish();return}
-      }
       bullets.forEach(b=>b.y-=6.2*(dt/16.6));
       bullets=bullets.filter(b=>b.y>-14);
       for(const b of bullets){
-        const hit=invaders.find(v=>v.alive&&b.x<v.x+CW&&b.x+4>v.x&&b.y<v.y+CH&&b.y+10>v.y);
+        const hit=people.find(v=>v.alive&&b.x<v.x+WID&&b.x+4>v.x&&b.y<v.y+HT&&b.y+10>v.y);
         if(hit){
           hit.alive=false;b.y=-99;
           if(hit.fit){
@@ -182,7 +175,7 @@ GAMES.leadSort.build=function(host,done){
             keepEl.textContent='CAPTURED · '+keep;
             scoreEl.textContent='SCORE · '+score;
             comboEl.textContent='COMBO · x'+combo;
-            if(fitLeft<=0){finish();return}
+            if(fitLeft<=0)finish();
           }else{
             combo=0;score=Math.max(0,score-40);
             scoreEl.textContent='SCORE · '+score;
@@ -196,28 +189,29 @@ GAMES.leadSort.build=function(host,done){
     draw();
     if(!dead)gameState.raf=requestAnimationFrame(frame);
   }
+  function drawPerson(v){
+    const x=v.x,y=v.y;
+    ctx.fillStyle=v.fit?'#fff':'rgba(255,255,255,.16)';
+    ctx.fillRect(x+8,y,8,9);
+    ctx.fillRect(x+5,y+9,14,7);
+    ctx.fillRect(x+1,y+16,WID-2,5);
+    if(v.fit){
+      ctx.fillStyle='#000';
+      ctx.fillRect(x+9,y+3,2,2);
+      ctx.fillRect(x+13,y+3,2,2);
+    }else{
+      ctx.fillStyle='#444';
+      ctx.fillRect(x+9,y+3,6,2);
+    }
+  }
   function draw(){
     ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
     ctx.fillRect(0,H-2,W,2);
     ctx.fillStyle='#fff';
-    ctx.fillRect(player.x+16,H-26,8,6);
-    ctx.fillRect(player.x,H-20,player.w,6);
-    ctx.fillRect(player.x+8,H-14,player.w-16,4);
-    invaders.forEach(v=>{
-      if(!v.alive)return;
-      if(v.fit){
-        ctx.fillStyle='#fff';ctx.fillRect(v.x,v.y,CW,CH);
-        ctx.fillStyle='#000';
-        ctx.fillRect(v.x+CW/2-2,v.y+CH/2-4,4,8);
-        ctx.fillRect(v.x+CW/2-4,v.y+CH/2-2,8,4);
-      }else{
-        ctx.fillStyle='#fff';ctx.fillRect(v.x,v.y,CW,CH);
-        ctx.fillStyle='#000';ctx.fillRect(v.x+2,v.y+2,CW-4,CH-4);
-        ctx.fillStyle='#666';
-        ctx.fillRect(v.x+CW/2-2,v.y+CH/2-4,4,8);
-        ctx.fillRect(v.x+CW/2-4,v.y+CH/2-2,8,4);
-      }
-    });
+    ctx.fillRect(player.x+16,H-26,8,8);
+    ctx.fillRect(player.x,H-18,player.w,6);
+    ctx.fillRect(player.x+6,H-12,player.w-12,4);
+    people.forEach(v=>{if(v.alive)drawPerson(v)});
     bullets.forEach(b=>ctx.fillRect(b.x,b.y,4,10));
   }
   onKey(e=>{
