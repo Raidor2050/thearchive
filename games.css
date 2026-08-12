@@ -22,10 +22,7 @@
 .game-msg{text-align:center;font-size:15px;color:#fff;min-height:20px}
 
 .lead-offer{border:2px solid #fff;padding:10px;text-align:center;font-size:18px;margin-bottom:6px}
-.lead-board{min-height:140px;border:2px dashed #fff;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:14px}
-.lead-line{font-size:22px}
-.lead-bar{height:10px;border:1px solid #fff;margin-top:6px}
-.lead-bar-fill{height:100%;background:#fff;width:100%}
+.li-canvas{width:100%;height:auto;display:block;border:2px solid #fff;image-rendering:pixelated}
 
 .eb-profile{border:2px solid #fff;padding:10px;font-size:16px;text-align:center}
 .eb-slots{display:grid;gap:6px}
@@ -75,7 +72,6 @@
 
 @media(max-width:760px){
   .game-title{font-size:19px}
-  .lead-line{font-size:18px}
   .pc-sit{font-size:17px}
   .af-pad{grid-template-columns:repeat(2,1fr)}
   .op-grid{grid-template-columns:1fr}

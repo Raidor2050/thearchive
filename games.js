@@ -1,13 +1,13 @@
 /* THE ARCHIVE // V1.1 MINI DRILLS */
 /* Five short browser games tied to the Guide's story topics. */
 
-const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],raf:null,generation:0};
+const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],keysUp:[],raf:null,generation:0};
 
 const GAMES = {
   leadSort: {
-    id:'leadSort', title:'LEAD SORT', tag:'LEAD SOURCING',
-    desc:'Keep the leads that fit the offer. Pass the noise. Fast.',
-    tips:['Match the lead to the offer, not the other way around.','Audience fit comes first.','A list alone is not a pipeline.','Decisive beats perfect.','Region and audience both have to line up.']
+    id:'leadSort', title:'LEAD INVADERS', tag:'LEAD SOURCING',
+    desc:'Classic invaders. Shoot the fit leads. Avoid wasting fire on the noise.',
+    tips:['Shoot the fit leads. Skip the noise.','Audience fit comes first.','A list alone is not a pipeline.','Keep your combo alive.','The formation speeds up as it thins out.']
   },
   emailBuild: {
     id:'emailBuild', title:'EMAIL BUILD', tag:'OUTREACH',
@@ -39,7 +39,6 @@ const GAMES = {
 function g$(id){return document.getElementById(id)}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function randBetween(min,max){return min+Math.random()*(max-min)}
 function shuffle(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
@@ -47,7 +46,8 @@ function isGameBlocking(){return gameState.open}
 function getBoard(id){if(!state.leaderboard)state.leaderboard={};if(!state.leaderboard[id])state.leaderboard[id]=[];return state.leaderboard[id]}
 
 function onKey(fn){window.addEventListener('keydown',fn);gameState.keys.push(fn)}
-function clearKeys(){gameState.keys.forEach(fn=>window.removeEventListener('keydown',fn));gameState.keys=[]}
+function onKeyUp(fn){window.addEventListener('keyup',fn);gameState.keysUp.push(fn)}
+function clearKeys(){gameState.keys.forEach(fn=>window.removeEventListener('keydown',fn));gameState.keys=[];gameState.keysUp.forEach(fn=>window.removeEventListener('keyup',fn));gameState.keysUp=[]}
 
 function startGame(id){
   if(gameState.open)return;
@@ -133,68 +133,105 @@ function openGamesRoom(){
   openModal('GAMES','V1.1 · MINI DRILLS',html);
 }
 
-/* ---- 1. LEAD SORT ---- */
-const LEAD_OFFERS=[
-  {text:'US CREATORS · 5K+ · TRAVEL',region:'US',min:5000},
-  {text:'CA GAMERS · 20K+ · GAMING',region:'CA',min:20000},
-  {text:'UK TECH · 10K+ · SAAS',region:'UK',min:10000},
-  {text:'DE LIFESTYLE · 8K+ · ECOM',region:'DE',min:8000}
-];
-const LEAD_REGIONS=['US','CA','UK','DE'];
-const LEAD_CHANNELS=['YT','IG','TW','BLOG'];
-function genLeads(n,offer){
-  const out=[];
-  for(let k=0;k<n;k++){
-    const fit=Math.random()<0.5;
-    const region=fit?offer.region:pick(LEAD_REGIONS.filter(r=>r!==offer.region));
-    const audience=fit?Math.round(offer.min*randBetween(1,4)/100)*100:Math.round(offer.min*randBetween(0.1,0.95)/100)*100;
-    out.push({region,audience,channel:pick(LEAD_CHANNELS),fit});
-  }
-  return out;
-}
+/* ---- 1. LEAD INVADERS ---- */
 GAMES.leadSort.build=function(host,done){
-  const CARD_MS=3500;
-  const offer=pick(LEAD_OFFERS);
-  const leads=genLeads(12,offer);
-  let i=0,score=0,combo=0,answered=true;
-  const offerEl=el('div','lead-offer','OFFER · '+offer.text);
+  const W=620,H=300,CW=20,CH=16,cols=8,rows=4;
+  const c=el('canvas','li-canvas');c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  let score=0,combo=0,keep=0,dead=false,last=performance.now();
   const scoreEl=el('div','game-stat','SCORE · 0');
+  const keepEl=el('div','game-stat','CAPTURED · 0');
   const comboEl=el('div','game-stat','COMBO · x0');
-  const hud=el('div','game-hud');hud.appendChild(scoreEl);hud.appendChild(comboEl);
-  const bar=el('div','lead-bar');const fill=el('div','lead-bar-fill');bar.appendChild(fill);
-  const board=el('div','lead-board');
-  const actions=el('div','game-actions');
-  const keep=el('button','game-btn','KEEP (A)');keep.type='button';
-  const pass=el('button','game-btn','PASS (D)');pass.type='button';
-  actions.appendChild(keep);actions.appendChild(pass);
-  host.appendChild(el('div','game-hint','KEEP the leads that fit the offer. PASS the noise.'));
-  host.appendChild(offerEl);host.appendChild(hud);host.appendChild(board);host.appendChild(bar);host.appendChild(actions);
-  let timer=null;
-  function render(){
-    if(i>=leads.length){done(score);return}
-    const l=leads[i];
-    board.innerHTML='';
-    board.appendChild(el('div','lead-line','REGION · '+l.region));
-    board.appendChild(el('div','lead-line','AUDIENCE · '+l.audience.toLocaleString()));
-    board.appendChild(el('div','lead-line','CHANNEL · '+l.channel));
-    fill.style.transition='none';fill.style.width='100%';
-    requestAnimationFrame(()=>{requestAnimationFrame(()=>{fill.style.transition='width '+CARD_MS+'ms linear';fill.style.width='0%'})});
-    answered=false;
-    clearTimeout(timer);
-    timer=setTimeout(()=>answer(l.fit,false,true),CARD_MS);
+  const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · SOLID = FIT LEAD, HOLLOW = NOISE'));
+  host.appendChild(hud);host.appendChild(c);
+  const invaders=[];
+  let fitLeft=0;
+  for(let r=0;r<rows;r++)for(let i=0;i<cols;i++){
+    const fit=(r+i)%2===0;
+    if(fit)fitLeft++;
+    invaders.push({x:52+i*68,y:36+r*42,w:CW,h:CH,fit,alive:true,dir:1});
   }
-  function answer(correct,userFit,timeout){
-    if(answered)return;answered=true;clearTimeout(timer);
-    if(correct){combo++;score+=100+50*combo}
-    else{combo=0;if(!timeout)score=Math.max(0,score-50)}
-    scoreEl.textContent='SCORE · '+score;
-    comboEl.textContent='COMBO · x'+combo;
-    i++;render();
+  const player={x:W/2-20,w:40};
+  let bullets=[],fired=false,stepT=0;
+  const keyState={left:false,right:false};
+  function finish(){dead=true;done(score)}
+  function frame(now){
+    const dt=Math.min(50,now-last);last=now;
+    if(!dead){
+      if(keyState.left)player.x=Math.max(0,player.x-4.4*(dt/16.6));
+      if(keyState.right)player.x=Math.min(W-player.w,player.x+4.4*(dt/16.6));
+      const alive=invaders.filter(v=>v.alive);
+      stepT+=dt;
+      const interval=Math.max(200,780-alive.length*20);
+      if(stepT>=interval){
+        stepT=0;
+        let edge=false;
+        alive.forEach(v=>{v.x+=v.dir*16;if(v.x<6){v.x=6;v.dir=1;edge=true}if(v.x>W-6-CW){v.x=W-6-CW;v.dir=-1;edge=true}});
+        if(edge)alive.forEach(v=>{v.y+=16});
+        if(alive.some(v=>v.y+CH>=H-24)){finish();return}
+      }
+      bullets.forEach(b=>b.y-=6.2*(dt/16.6));
+      bullets=bullets.filter(b=>b.y>-14);
+      for(const b of bullets){
+        const hit=invaders.find(v=>v.alive&&b.x<v.x+CW&&b.x+4>v.x&&b.y<v.y+CH&&b.y+10>v.y);
+        if(hit){
+          hit.alive=false;b.y=-99;
+          if(hit.fit){
+            combo++;score+=100+50*combo;keep++;fitLeft--;
+            keepEl.textContent='CAPTURED · '+keep;
+            scoreEl.textContent='SCORE · '+score;
+            comboEl.textContent='COMBO · x'+combo;
+            if(fitLeft<=0){finish();return}
+          }else{
+            combo=0;score=Math.max(0,score-40);
+            scoreEl.textContent='SCORE · '+score;
+            comboEl.textContent='COMBO · x0';
+          }
+          break;
+        }
+      }
+      bullets=bullets.filter(b=>b.y>-14);
+    }
+    draw();
+    if(!dead)gameState.raf=requestAnimationFrame(frame);
   }
-  keep.onclick=()=>answer(leads[i].fit,true,false);
-  pass.onclick=()=>answer(!leads[i].fit,false,false);
-  onKey(e=>{const k=e.key.toLowerCase();if(k==='a')keep.onclick();else if(k==='d')pass.onclick()});
-  render();
+  function draw(){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    ctx.fillRect(0,H-2,W,2);
+    ctx.fillStyle='#fff';
+    ctx.fillRect(player.x+16,H-26,8,6);
+    ctx.fillRect(player.x,H-20,player.w,6);
+    ctx.fillRect(player.x+8,H-14,player.w-16,4);
+    invaders.forEach(v=>{
+      if(!v.alive)return;
+      if(v.fit){
+        ctx.fillStyle='#fff';ctx.fillRect(v.x,v.y,CW,CH);
+        ctx.fillStyle='#000';
+        ctx.fillRect(v.x+CW/2-2,v.y+CH/2-4,4,8);
+        ctx.fillRect(v.x+CW/2-4,v.y+CH/2-2,8,4);
+      }else{
+        ctx.fillStyle='#fff';ctx.fillRect(v.x,v.y,CW,CH);
+        ctx.fillStyle='#000';ctx.fillRect(v.x+2,v.y+2,CW-4,CH-4);
+        ctx.fillStyle='#666';
+        ctx.fillRect(v.x+CW/2-2,v.y+CH/2-4,4,8);
+        ctx.fillRect(v.x+CW/2-4,v.y+CH/2-2,8,4);
+      }
+    });
+    bullets.forEach(b=>ctx.fillRect(b.x,b.y,4,10));
+  }
+  onKey(e=>{
+    const k=e.key;
+    if(k==='ArrowLeft'||k.toLowerCase()==='a'){e.preventDefault();keyState.left=true}
+    else if(k==='ArrowRight'||k.toLowerCase()==='d'){e.preventDefault();keyState.right=true}
+    else if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();if(!fired&&!dead){fired=true;bullets.push({x:player.x+player.w/2-2,y:H-34});setTimeout(()=>fired=false,200)}}
+  });
+  onKeyUp(e=>{
+    const k=e.key;
+    if(k==='ArrowLeft'||k.toLowerCase()==='a')keyState.left=false;
+    else if(k==='ArrowRight'||k.toLowerCase()==='d')keyState.right=false;
+  });
+  gameState.raf=requestAnimationFrame(frame);
 };
 
 /* ---- 2. EMAIL BUILD ---- */
