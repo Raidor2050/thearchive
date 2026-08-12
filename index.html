@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Raiyan Kabir — an interactive monochrome archive of affiliate marketing, partnerships, growth operations, data and campaign optimization.">
+<title>RAIYAN // ARCHIVE</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="stylesheet" href="https://cartr.gitlab.io/undertale-fonts/webfonts/stylesheet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app" class="app">
+  <section id="startScreen" class="start-screen" aria-label="Start screen">
+    <button id="beginBtn" class="begin-btn" type="button">PRESS ENTER TO BEGIN</button>
+  </section>
+
+  <section id="experience" class="experience hidden" aria-label="Interactive portfolio experience">
+    <div class="experience-core">
+      <div class="micro-line" id="microLine">ARCHIVE // 01</div>
+
+      <article id="dialogueCard" class="dialogue-card" tabindex="0" aria-live="polite">
+        <div class="dialogue-top">
+          <div class="speaker" id="speakerName">* GUIDE</div>
+          <div class="scene-mark" id="sceneMark">[01]</div>
+        </div>
+        <div class="dialogue-body">
+          <div class="guide-portrait" aria-hidden="true"><div class="guide-pixel-face"><i class="g-hair"></i><i class="g-face"></i><i class="g-frame l"></i><i class="g-frame r"></i><i class="g-bridge"></i><i class="g-eye l"></i><i class="g-eye r"></i></div></div>
+          <div class="dialogue-copy">
+            <div class="dialogue-text" id="dialogueText"></div>
+            <button id="continueBtn" class="continue-btn" type="button" aria-label="Continue dialogue"><span>PRESS ENTER</span><b aria-hidden="true">▼</b></button>
+          </div>
+        </div>
+      </article>
+
+      <div class="choices" id="choices" aria-label="Choices"></div>
+    </div>
+
+    <nav class="icon-nav" aria-label="Archive controls">
+      <button class="icon-btn home" id="homeBtn" type="button" aria-label="Home" data-label="HOME"><span aria-hidden="true">⌂</span></button>
+      <button class="icon-btn" id="questsBtn" type="button" aria-label="Quests" data-label="QUESTS"><span aria-hidden="true">★</span></button>
+      <button class="icon-btn" id="toolkitBtn" type="button" aria-label="Toolkit" data-label="TOOLKIT"><span aria-hidden="true">◇</span></button>
+      <button class="icon-btn" id="profileBtn" type="button" aria-label="Profile" data-label="PROFILE"><span aria-hidden="true">◎</span></button>
+      <button class="icon-btn" id="contactBtn" type="button" aria-label="Contact" data-label="CONTACT"><span aria-hidden="true">✉</span></button>
+      <button class="icon-btn locked" id="achievementsBtn" type="button" aria-label="Achievements" data-label="ACHIEVEMENTS" hidden><span aria-hidden="true">✦</span></button>
+    </nav>
+
+    <div class="utility-row">
+      <button id="soundBtn" class="utility-btn" type="button" aria-pressed="true">SOUND ON</button>
+      <button id="backBtn" class="utility-btn" type="button">BACK</button>
+      <div id="saveState" class="save-state">LOCAL</div>
+    </div>
+  </section>
+</main>
+
+<aside id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Archive panel">
+  <button id="modalBackdrop" class="modal-backdrop" type="button" aria-label="Close panel"></button>
+  <section id="modalCard" class="modal-card" tabindex="-1">
+    <div class="modal-header">
+      <div>
+        <div id="modalKicker" class="modal-kicker">ARCHIVE</div>
+        <div id="modalSub" class="modal-sub">A useful page.</div>
+      </div>
+      <button id="modalClose" class="modal-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div id="modalContent" class="modal-content"></div>
+  </section>
+</aside>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="script.js"></script>
+</body>
+</html>
