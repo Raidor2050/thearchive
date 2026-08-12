@@ -27,11 +27,6 @@ python -m http.server
 - Sound on/off toggle with retro bleeps and ambient loop.
 - Progress is saved locally in the browser (`localStorage`).
 
-## Contact
-
-- Email: raiyang3@gmail.com
-- WhatsApp: +8801988667788
-
 ## Structure
 
 ```
