@@ -28,6 +28,11 @@ const GAMES = {
     id:'autoFlow', title:'AUTO FLOW', tag:'AUTOMATION',
     desc:'Watch the workflow sequence, then repeat it.',
     tips:['Automation removes the busywork.','Trigger. Filter. Act. Log.','Consistency beats improvisation.','Let the system carry the memory.','Build it once, run it forever.']
+  },
+  onboardPack: {
+    id:'onboardPack', title:'ONBOARD PACK', tag:'ONBOARDING',
+    desc:'Pack the partner handoff. Links, terms, assets, timing, owner. Skip the noise.',
+    tips:['Onboarding is not the finish line.','The handoff needs links, terms, assets and timing.','And a clear owner.','Pick what starts the work. Skip the rest.','Five items make the pack. Find them all.']
   }
 };
 
@@ -111,7 +116,7 @@ function showResults(score){
   input.focus();
 }
 function skipGame(){if(!gameState.open)return;stopTips();stopLoop();showResults(null)}
-function closeGamePanel(){stopTips();stopLoop();const panel=g$('gamePanel');panel.classList.remove('open');panel.innerHTML='';gameState.open=false;gameState.id=null;gameState.results=false}
+function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');panel.classList.remove('open');panel.innerHTML='';gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
 
 function openLeaderboard(id){
   const g=GAMES[id];if(!g)return;
@@ -382,4 +387,35 @@ GAMES.autoFlow.build=function(host,done){
     };
   });
   startRound();
+};
+
+/* ---- 6. ONBOARD PACK ---- */
+GAMES.onboardPack.build=function(host,done){
+  const PACK=['AFFILIATE LINK','TERMS SHEET','CREATIVE ASSETS','LAUNCH TIMING','POINT OF CONTACT'];
+  const NOISE=['PAYROLL REPORT','DESIGN MOCKUPS','OFFICE BUDGET','TRAVEL SCHEDULE','PASSWORD LIST'];
+  const items=shuffle(PACK.map(label=>({label,good:true})).concat(NOISE.map(label=>({label,good:false}))));
+  let found=0,score=0;
+  const countEl=el('div','game-stat','ITEMS · 0 / 5');
+  const scoreEl=el('div','game-stat','SCORE · 0');
+  const hud=el('div','game-hud');hud.appendChild(countEl);hud.appendChild(scoreEl);
+  const grid=el('div','op-grid');
+  host.appendChild(el('div','game-hint','PICK THE FIVE ITEMS A PARTNER NEEDS TO START WORK.'));
+  host.appendChild(hud);host.appendChild(grid);
+  items.forEach(it=>{
+    const b=el('button','op-tile',it.label);b.type='button';
+    b.onclick=()=>{
+      if(b.classList.contains('done'))return;
+      if(it.good){
+        b.classList.add('done');b.disabled=true;
+        found++;score+=100;
+        scoreEl.textContent='SCORE · '+score;
+        countEl.textContent='ITEMS · '+found+' / 5';
+        if(found===5)done(score);
+      }else{
+        score=Math.max(0,score-40);scoreEl.textContent='SCORE · '+score;
+        b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),240);
+      }
+    };
+    grid.appendChild(b);
+  });
 };

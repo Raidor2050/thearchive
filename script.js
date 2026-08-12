@@ -33,7 +33,7 @@ const narrativeScenes = [
   {id:'scale3b',chapter:'JOURNEY // 07',speaker:'* GUIDE',text:'Clear handoffs. Visible priorities.',next:'scale3c'},
   {id:'scale3c',chapter:'JOURNEY // 07',speaker:'* GUIDE',text:'And room to improve.',next:'scaleChoice'},
   {id:'scaleChoice',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'A process helps people make better decisions.',next:'scaleChoice2'},
-  {id:'scaleChoice2',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'The rest is best heard from Raiyan himself.',next:'finalContact'},
+  {id:'scaleChoice2',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'The rest is best heard from Raiyan himself.',next:'drillGate'},
   {id:'ops1',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'First, define the partner you need.',next:'ops1b'},
   {id:'ops1b',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'Audience fit. Commercial fit.',next:'ops1c'},
   {id:'ops1c',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'And the ability to activate.',next:'ops2'},
@@ -47,14 +47,14 @@ const narrativeScenes = [
   {id:'ops4',chapter:'PLAYBOOK // 04',speaker:'* GUIDE',text:'Onboarding is not the finish line.',next:'ops4b'},
   {id:'ops4b',chapter:'PLAYBOOK // 04',speaker:'* GUIDE',text:'It is the handoff from interest to action.',next:'ops4c'},
   {id:'ops4c',chapter:'PLAYBOOK // 04',speaker:'* GUIDE',text:'Links. Terms. Assets. Timing.',next:'ops4d'},
-  {id:'ops4d',chapter:'PLAYBOOK // 04',speaker:'* GUIDE',text:'And a clear owner.',next:'ops5'},
+  {id:'ops4d',chapter:'PLAYBOOK // 04',speaker:'* GUIDE',text:'And a clear owner.',next:'ops5',game:'onboardPack'},
   {id:'ops5',chapter:'PLAYBOOK // 05',speaker:'* GUIDE',text:'After launch, keep the relationship warm.',next:'ops5b',secret:4},
   {id:'ops5b',chapter:'PLAYBOOK // 05',speaker:'* GUIDE',text:'Performance data shows where to support.',next:'ops5c'},
   {id:'ops5c',chapter:'PLAYBOOK // 05',speaker:'* GUIDE',text:'Or test, or change direction.',next:'opsChoice'},
   {id:'opsChoice',chapter:'PLAYBOOK // CHECKPOINT',speaker:'* GUIDE',text:'Source. Connect. Qualify. Activate. Learn.',next:'opsChoice2'},
   {id:'opsChoice2',chapter:'PLAYBOOK // CHECKPOINT',speaker:'* GUIDE',text:'It works best when the conversation stays human.',next:'opsClose'},
   {id:'opsClose',chapter:'PLAYBOOK // 06',speaker:'* GUIDE',text:'Now the close itself.',game:'closeDeal',next:'opsAuto'},
-  {id:'opsAuto',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'Then automate the busywork.',game:'autoFlow',next:'finalContact'},
+  {id:'opsAuto',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'Then automate the busywork.',game:'autoFlow',next:'drillGate'},
   {id:'outcomes1',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'One effort started with about 2,000 leads.',next:'outcomes1b'},
   {id:'outcomes1b',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'Not a sprint.',next:'outcomes1c'},
   {id:'outcomes1c',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'A disciplined filter.',next:'outcomes2'},
@@ -67,7 +67,7 @@ const narrativeScenes = [
   {id:'outcomes4b',chapter:'FIELD NOTES // 04',speaker:'* GUIDE',text:'More than 80 shipments across the US and Canada.',next:'outcomes4c'},
   {id:'outcomes4c',chapter:'FIELD NOTES // 04',speaker:'* GUIDE',text:'Every shipment was a relationship to manage well.',next:'outcomesChoice'},
   {id:'outcomesChoice',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Thoughtful sourcing.',next:'outcomesChoice2'},
-  {id:'outcomesChoice2',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Clear communication. Dependable follow-through.',next:'finalContact'},
+  {id:'outcomesChoice2',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Clear communication. Dependable follow-through.',next:'drillGate'},
   {id:'craft1',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'Good partner work needs a memory.',next:'craft1b'},
   {id:'craft1b',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'CRM notes. Lead databases. Reporting.',next:'craft1c'},
   {id:'craft1c',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'They make every conversation easier to continue.',next:'craft2'},
@@ -75,7 +75,8 @@ const narrativeScenes = [
   {id:'craft2b',chapter:'SYSTEMS // 02',speaker:'* GUIDE',text:'Analytics show where attention should go.',next:'craft3'},
   {id:'craft3',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The tool is not the point.',next:'craft3b',secret:6},
   {id:'craft3b',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The right record at the right moment is.',next:'craft3c'},
-  {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'finalContact'},
+  {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'drillGate'},
+  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:'finalContact'},
   {id:'finalContact',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the shape of it.',next:'finalContact2'},
   {id:'finalContact2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Ready to contact Raiyan?',choices:[{label:'YES — OPEN A CHANNEL',next:'contact'},{label:'NO — I WILL KEEP EXPLORING',next:'hub'}]},
   {id:'profileHint',chapter:'ARCHIVE NOTE // 01',speaker:'* GUIDE',text:'The profile holds the professional record.',next:'profileHint2',secret:8},
@@ -97,12 +98,15 @@ const quests = [
  ['THE BACKFLIP','Do a backflip.','todo']
 ];
 
-const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,playerName:'',leaderboard:{}};
+const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,playerName:'',leaderboard:{},playedGames:[]};
 let audioCtx=null,ambientTimer=null;
 const $=id=>document.getElementById(id);
+const GAME_ORDER=['leadSort','emailBuild','partnerCall','onboardPack','closeDeal','autoFlow'];
+function remainingGames(){return GAME_ORDER.filter(id=>!state.playedGames.includes(id))}
+function markGamePlayed(id){if(id&&!state.playedGames.includes(id)){state.playedGames.push(id);save()}}
 const ui={start:$('startScreen'),begin:$('beginBtn'),experience:$('experience'),chapter:$('microLine'),card:$('dialogueCard'),speaker:$('speakerName'),sceneMark:$('sceneMark'),text:$('dialogueText'),continue:$('continueBtn'),choices:$('choices'),quests:$('questsBtn'),toolkit:$('toolkitBtn'),profile:$('profileBtn'),contact:$('contactBtn'),home:$('homeBtn'),achievements:$('achievementsBtn'),back:$('backBtn'),sound:$('soundBtn'),save:$('saveState'),modal:$('modal'),backdrop:$('modalBackdrop'),modalCard:$('modalCard'),modalKicker:$('modalKicker'),modalSub:$('modalSub'),modalContent:$('modalContent'),modalClose:$('modalClose'),toast:$('toast'),gamePanel:$('gamePanel'),gamesBtn:$('gamesBtn')};
 function save(){try{localStorage.setItem('raiyan-ruby-ui-v11',JSON.stringify({...state,timer:null}))}catch{}ui.save.textContent=state.achievementsUnlocked?'ACHIEVEMENTS':'LOCAL'}
-function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}'));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}}catch{}}
+function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}'));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}if(!Array.isArray(state.playedGames))state.playedGames=[]}catch{}}
 function current(){return narrativeScenes[state.index]}
 function textFor(scene){return typeof scene.text==='function'?scene.text():scene.text}
 function ensureAudio(){if(!state.sound)return;try{audioCtx ||= new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch{}}
@@ -114,13 +118,13 @@ function toast(msg){ui.toast.textContent=msg;ui.toast.classList.add('show');clea
 function discover(n){if(state.found.includes(n))return;state.found.push(n);state.xp=Math.min(8,state.xp+1);save();toast('ARCHIVE NOTE FOUND  ·  XP +1');choiceSound()}
 function renderChoices(){ui.choices.innerHTML='';current().choices.forEach((c,i)=>{const b=document.createElement('button');b.className='choice-btn';b.type='button';b.textContent=c.label;b.onclick=()=>choose(i,c.next);ui.choices.appendChild(b)});ui.card.classList.add('has-choices')}
 function renderScene(){clearInterval(state.timer);state.typing=true;state.charIndex=0;const s=current();ui.chapter.textContent=s.chapter;ui.speaker.textContent=s.speaker;ui.sceneMark.textContent=`[${String(state.index+1).padStart(2,'0')}]`;ui.text.textContent='';ui.choices.innerHTML='';ui.card.classList.remove('ready','has-choices');const chars=[...textFor(s)];state.timer=setInterval(()=>{state.charIndex++;ui.text.textContent=chars.slice(0,state.charIndex).join('');if(state.charIndex>=chars.length)finishTyping()},state.speed)}
-function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);if(s.game)setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(s.game)},450);save()}
+function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid))setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(gid,s.id)},250);save()}
 function choose(i,next){state.choices.push({scene:current().id,choice:i});choiceSound();if(next==='contact'){openContact();save();return}goto(next)}
 function goto(id){const idx=narrativeScenes.findIndex(s=>s.id===id);if(idx<0)return;state.history.push(state.index);state.index=idx;advanceSound();renderScene();save()}
 function unlockAchievements(){if(state.achievementsUnlocked)return;state.achievementsUnlocked=true;ui.achievements.hidden=false;ui.achievements.classList.add('unlocked');save();toast('ACHIEVEMENTS UNLOCKED');choiceSound()}
-function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();if(s.choices)return;if(s.next)goto(s.next);else toast('END OF FILE')}
+function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;if(s.next)goto(s.next);else toast('END OF FILE')}
 function back(){if(state.typing){finishTyping();return}const prev=state.history.pop();if(prev===undefined)return;state.index=prev;advanceSound();renderScene();save()}
-function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
+function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.playedGames=[];ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
 function openModal(kicker,sub,html){ui.modalKicker.textContent=kicker;ui.modalSub.textContent=sub;ui.modalContent.innerHTML=html;ui.modal.classList.remove('hidden');document.body.classList.add('modal-open');requestAnimationFrame(()=>ui.modalCard.focus())}
 function closeModal(){ui.modal.classList.add('hidden');document.body.classList.remove('modal-open')}
 function openAchievements(){openModal('ACHIEVEMENTS','The archive kept score.',`<div class="story-modal"><div class="modal-portrait mini-avatar" aria-hidden="true"></div><div><p class="story-lead">You stayed long enough for the archive to notice.</p><p>${state.found.length} optional notes found. ${state.xp} XP earned.</p><p class="story-small">The number is fake. The curiosity is not.</p></div></div>`)}

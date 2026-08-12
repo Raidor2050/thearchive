@@ -51,6 +51,12 @@
 .af-block.lit{background:#fff;color:#000}
 .af-block.ok{outline:3px solid #fff;outline-offset:2px}
 
+.op-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.op-tile{border:2px solid #fff;background:#000;color:#fff;padding:16px 10px;font-size:17px;cursor:pointer;min-height:64px}
+.op-tile:hover:not(:disabled){background:#fff;color:#000}
+.op-tile.done{background:#fff;color:#000;cursor:default}
+.op-tile.wrong{outline:3px solid #fff;outline-offset:2px;animation:gShake .18s steps(2,end)}
+
 .lb{display:grid;gap:8px}
 .lb-row{display:grid;grid-template-columns:44px 1fr auto;gap:10px;border:2px solid #fff;padding:10px 12px;font-size:18px;align-items:center}
 .lb-rank{color:#888;font-size:16px}
@@ -73,6 +79,7 @@
   .lead-line{font-size:18px}
   .pc-sit{font-size:17px}
   .af-pad{grid-template-columns:repeat(2,1fr)}
+  .op-grid{grid-template-columns:1fr}
   .game-row{grid-template-columns:1fr}
   .game-row-actions{flex-direction:row}
 }
