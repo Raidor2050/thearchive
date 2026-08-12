@@ -1,7 +1,7 @@
 /* THE ARCHIVE // V1.1 MINI DRILLS */
 /* Five short browser games tied to the Guide's story topics. */
 
-const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],raf:null};
+const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],raf:null,generation:0};
 
 const GAMES = {
   leadSort: {
@@ -55,7 +55,6 @@ function startGame(id){
   if(typeof closeModal==='function')closeModal();
   gameState.open=true;gameState.id=id;gameState.results=false;
   const panel=g$('gamePanel');
-  panel.classList.add('open');
   panel.innerHTML='';
   const head=el('div','game-head');
   const title=el('div','game-title',g.tag+' · '+g.title);
@@ -69,6 +68,9 @@ function startGame(id){
   gameState.tipsTimer=setInterval(()=>{i=(i+1)%g.tips.length;tips.textContent='GUIDE · '+g.tips[i]},4200);
   const done=(score)=>{stopTips();showResults(score)};
   g.build(body,done);
+  const card=g$('dialogueCard');
+  card.classList.add('game-mode');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>panel.classList.add('open')));
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function stopTips(){clearInterval(gameState.tipsTimer);gameState.tipsTimer=null}
@@ -116,7 +118,7 @@ function showResults(score){
   input.focus();
 }
 function skipGame(){if(!gameState.open)return;stopTips();stopLoop();showResults(null)}
-function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');panel.classList.remove('open');panel.innerHTML='';gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
+function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');const card=g$('dialogueCard');panel.classList.remove('open');card.classList.remove('game-mode');gameState.generation++;const gen=gameState.generation;setTimeout(()=>{if(gen===gameState.generation)panel.innerHTML=''},500);gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
 
 function openLeaderboard(id){
   const g=GAMES[id];if(!g)return;

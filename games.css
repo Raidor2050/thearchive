@@ -1,7 +1,7 @@
 /* THE ARCHIVE // V1.1 MINI DRILLS */
 
-.game-panel{width:min(920px,100%);display:none}
-.game-panel.open{display:block;margin-top:6px;border:3px solid #fff;background:#000;box-shadow:8px 8px 0 #fff;padding:16px;text-align:left}
+.game-panel{display:block;width:100%;max-height:0;overflow:hidden;opacity:0;border-top:3px solid transparent;margin-top:16px;padding:0;text-align:left;transition:max-height .5s ease,opacity .3s ease,border-color .5s ease}
+.game-panel.open{max-height:1500px;opacity:1;border-color:#fff;padding-top:14px}
 .game-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #fff;padding-bottom:10px;margin-bottom:10px}
 .game-title{font-size:24px;letter-spacing:.05em}
 .game-tips{margin-bottom:12px;font-size:15px;color:#aaa;min-height:20px}
@@ -74,7 +74,6 @@
 @keyframes gShake{0%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}100%{transform:translateX(0)}}
 
 @media(max-width:760px){
-  .game-panel{width:100%}
   .game-title{font-size:19px}
   .lead-line{font-size:18px}
   .pc-sit{font-size:17px}
