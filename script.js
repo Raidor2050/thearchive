@@ -80,7 +80,7 @@ const narrativeScenes = [
   {id:'craft3',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The tool is not the point.',next:'craft3b',secret:6},
   {id:'craft3b',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The right record at the right moment is.',next:'craft3c'},
   {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'drillGate'},
-  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:'finalContact'},
+  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'drillGate':'finalContact'}},
   {id:'finalContact',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the shape of it.',next:'finalContact2'},
   {id:'finalContact2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Ready to contact Raiyan?',choices:[{label:'YES — OPEN A CHANNEL',next:'contact'},{label:'NO — I WILL KEEP EXPLORING',next:'hub'}]},
   {id:'profileHint',chapter:'ARCHIVE NOTE // 01',speaker:'* GUIDE',text:'The profile holds the professional record.',next:'profileHint2',secret:8},
@@ -150,7 +150,7 @@ function unlockAchievement(id){
   choiceSound();
 }
 function unlockAchievements(){unlockAchievement('patron')}
-function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;if(s.next)goto(s.next);else toast('END OF FILE')}
+function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;const t=typeof s.next==='function'?s.next():s.next;if(t)goto(t);else toast('END OF FILE')}
 function back(){if(state.typing){finishTyping();return}const prev=state.history.pop();if(prev===undefined)return;autoSeq=0;state.index=prev;advanceSound();renderScene();save()}
 function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.achievements=[];state.playedGames=[];autoSeq=0;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
 function openModal(kicker,sub,html){closeNav();ui.modalKicker.textContent=kicker;ui.modalSub.textContent=sub;ui.modalContent.innerHTML=html;ui.modal.classList.remove('hidden');document.body.classList.add('modal-open');requestAnimationFrame(()=>ui.modalCard.focus())}
