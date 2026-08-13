@@ -560,7 +560,7 @@ GAMES.autoFlow.build=function(host,done){
   function doJump(){
     if(dead||phase!=='run')return;
     if(onGround||coyoteT>0){
-      jumpV=-9.5;onGround=false;coyoteT=0;bufferT=0;
+      jumpV=9.5;onGround=false;coyoteT=0;bufferT=0;
       dust(player.x+8,GROUND,4,2.4);sfx(520,.1,'square',.03,820);
     }else{bufferT=120}
   }
@@ -592,9 +592,9 @@ GAMES.autoFlow.build=function(host,done){
       coyoteT=onGround?100:Math.max(0,coyoteT-dt);
       bufferT=Math.max(0,bufferT-dt);
       if(!onGround){
-        jumpV+=0.66*(dt/16.6);
+        jumpV-=0.66*(dt/16.6);
         player.y+=jumpV*(dt/16.6);
-        if(player.y>=0){
+        if(player.y<=0){
           player.y=0;onGround=true;jumpV=0;landT=6;dust(player.x+6,GROUND,3,2);
           if(bufferT>0){bufferT=0;doJump()}
         }
@@ -637,7 +637,7 @@ GAMES.autoFlow.build=function(host,done){
       for(const po of pops){po.y-=0.6;po.life--}
       for(let i=pops.length-1;i>=0;i--)if(pops[i].life<=0)pops.splice(i,1);
     }
-    gameState.af={phase,dead,onGround,speed,px:player.x,pw:player.w,obs:obstacles.map(o=>({x:o.x,w:o.w,h:o.h})),dist};
+    gameState.af={phase,dead,onGround,speed,px:player.x,pw:player.w,py:player.y,obs:obstacles.map(o=>({x:o.x,w:o.w,h:o.h})),dist};
     draw(now);
     if(!dead)gameState.raf=requestAnimationFrame(frame);
   }
