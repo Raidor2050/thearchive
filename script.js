@@ -1,3 +1,11 @@
+const GATE_LINES=[
+  'One story left — {T}. Then the last page opens.',
+  'Two stories left. {T} comes next.',
+  'Three stories remain. Up next: {T}.',
+  'Four stories remain. The next one is {T}.',
+  'Five stories left to live through. Next: {T}.',
+  'The archive keeps six stories hands-on. First up: {T}.'
+];
 const narrativeScenes = [
   {id:'intro1',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'You made it!',next:'intro2'},
   {id:'intro2',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'Welcome.',next:'intro2b'},
@@ -34,7 +42,7 @@ const narrativeScenes = [
   {id:'scale3b',chapter:'JOURNEY // 07',speaker:'* GUIDE',text:'Clear handoffs. Visible priorities.',next:'scale3c'},
   {id:'scale3c',chapter:'JOURNEY // 07',speaker:'* GUIDE',text:'And room to improve.',next:'scaleChoice'},
   {id:'scaleChoice',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'A process helps people make better decisions.',next:'scaleChoice2'},
-  {id:'scaleChoice2',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'The rest is best heard from Raiyan himself.',next:'drillGate'},
+  {id:'scaleChoice2',chapter:'JOURNEY // CHECKPOINT',speaker:'* GUIDE',text:'The rest is best heard from Raiyan himself.',next:'storyGate'},
   {id:'ops1',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'First, define the partner you need.',next:'ops1b'},
   {id:'ops1b',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'Audience fit. Commercial fit.',next:'ops1c'},
   {id:'ops1c',chapter:'PLAYBOOK // 01',speaker:'* GUIDE',text:'And the ability to activate.',next:'ops2'},
@@ -58,7 +66,7 @@ const narrativeScenes = [
   {id:'opsAuto1',chapter:'PLAYBOOK // 06',speaker:'* GUIDE',text:'The close is the start, not the end.',next:'opsAuto2'},
   {id:'opsAuto2',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'Repeats are where time quietly leaks.',next:'opsAuto3'},
   {id:'opsAuto3',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'So the busywork became a repeatable system.',next:'opsAuto'},
-  {id:'opsAuto',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'Then automate the busywork.',game:'autoFlow',next:'drillGate'},
+  {id:'opsAuto',chapter:'PLAYBOOK // 07',speaker:'* GUIDE',text:'Then automate the busywork.',game:'autoFlow',next:'storyGate'},
   {id:'outcomes1',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'One effort started with about 2,000 leads.',next:'outcomes1b'},
   {id:'outcomes1b',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'Not a sprint.',next:'outcomes1c'},
   {id:'outcomes1c',chapter:'FIELD NOTES // 01',speaker:'* GUIDE',text:'A disciplined filter.',next:'outcomes2'},
@@ -71,7 +79,7 @@ const narrativeScenes = [
   {id:'outcomes4b',chapter:'FIELD NOTES // 04',speaker:'* GUIDE',text:'More than 80 shipments across the US and Canada.',next:'outcomes4c'},
   {id:'outcomes4c',chapter:'FIELD NOTES // 04',speaker:'* GUIDE',text:'Every shipment was a relationship to manage well.',next:'outcomesChoice'},
   {id:'outcomesChoice',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Thoughtful sourcing.',next:'outcomesChoice2'},
-  {id:'outcomesChoice2',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Clear communication. Dependable follow-through.',next:'drillGate'},
+  {id:'outcomesChoice2',chapter:'FIELD NOTES // CHECKPOINT',speaker:'* GUIDE',text:'Clear communication. Dependable follow-through.',next:'storyGate'},
   {id:'craft1',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'Good partner work needs a memory.',next:'craft1b'},
   {id:'craft1b',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'CRM notes. Lead databases. Reporting.',next:'craft1c'},
   {id:'craft1c',chapter:'SYSTEMS // 01',speaker:'* GUIDE',text:'They make every conversation easier to continue.',next:'craft2'},
@@ -79,8 +87,8 @@ const narrativeScenes = [
   {id:'craft2b',chapter:'SYSTEMS // 02',speaker:'* GUIDE',text:'Analytics show where attention should go.',next:'craft3'},
   {id:'craft3',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The tool is not the point.',next:'craft3b',secret:6},
   {id:'craft3b',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The right record at the right moment is.',next:'craft3c'},
-  {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'drillGate'},
-  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain'+(r.length>1?'':'s')+'. Next up: '+GAMES[r[0]].title+'.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'drillGate':'truely1'}},
+  {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'storyGate'},
+  {id:'storyGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();if(r.length)return GATE_LINES[r.length-1].replace('{T}',GAMES[r[0]].title);return 'The whole story is told. One last page — and it is his own voice.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'storyGate':'truely1'}},
   {id:'truely1',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'One story shows how all of it runs.',next:'truely2'},
   {id:'truely2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'At Truely, the pipeline lived in Google Sheets.',next:'truely3'},
   {id:'truely3',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Leads, status and notes for the whole team.',next:'truely4'},
@@ -115,13 +123,13 @@ const quests = [
 ];
 
 const ACHIEVEMENTS={
-  leadSort:{name:'LEAD INVADERS',desc:'Played the lead sourcing drill.',icon:'☄'},
-  emailBuild:{name:'EMAIL BUILD',desc:'Played the outreach drill.',icon:'✉'},
-  partnerCall:{name:'PARTNER CALL',desc:'Played the contact drill.',icon:'✕'},
-  onboardPack:{name:'BLACKJACK',desc:'Played the dealing drill.',icon:'♠'},
-  closeDeal:{name:'CLOSE THE DEAL',desc:'Played the closing drill.',icon:'◉'},
-  autoFlow:{name:'AUTO FLOW',desc:'Played the automation drill.',icon:'⟳'},
-  allGames:{name:'COMPLETIONIST',desc:'Played all six mini drills.',icon:'★'},
+  leadSort:{name:'LEAD INVADERS',desc:'Ran the lead grid to the end.',icon:'☄'},
+  emailBuild:{name:'EMAIL BUILD',desc:'Assembled outreach that earns a reply.',icon:'✉'},
+  partnerCall:{name:'PARTNER CALL',desc:'Held a conversation to a line.',icon:'✕'},
+  onboardPack:{name:'BLACKJACK',desc:'Dealt the onboarding hand.',icon:'♠'},
+  closeDeal:{name:'CLOSE THE DEAL',desc:'Closed the hand on timing.',icon:'◉'},
+  autoFlow:{name:'AUTO FLOW',desc:'Ran the pipeline until it ran itself.',icon:'⟳'},
+  allGames:{name:'COMPLETIONIST',desc:'Lived through every story.',icon:'★'},
   saveScore:{name:'ON THE BOARD',desc:'Saved a score to a leaderboard.',icon:'≡'},
   patron:{name:'ARCHIVE PATRON',desc:'Pressed forward twelve times.',icon:'♛'}
 };

@@ -1,5 +1,5 @@
-/* THE ARCHIVE // V1.1 MINI DRILLS */
-/* Five short browser games tied to the Guide's story topics. */
+/* THE ARCHIVE // V1.1 MINI GAMES */
+/* Six short browser games tied to the Guide's stories. */
 
 const gameState = {open:false,id:null,results:false,tipsTimer:null,keys:[],keysUp:[],raf:null,generation:0};
 
@@ -26,8 +26,8 @@ const GAMES = {
   },
   autoFlow: {
     id:'autoFlow', title:'AUTO FLOW', tag:'AUTOMATION',
-    desc:'Watch the workflow sequence, then repeat it.',
-    tips:['Automation removes the busywork.','Trigger. Filter. Act. Log.','Consistency beats improvisation.','Let the system carry the memory.','Build it once, run it forever.']
+    desc:'Side-scroll the pipeline. Jump the dead ends, catch the lead packets, run it until it runs itself.',
+    tips:['The pipeline scrolls itself. You keep it moving.','Jump the manual dead ends.','Catch every lead packet.','Speed builds. Stay ready.','Build it once, run it forever.']
   },
   onboardPack: {
     id:'onboardPack', title:'BLACKJACK', tag:'ONBOARDING',
@@ -141,14 +141,14 @@ function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const pane
 function openLeaderboard(id){
   const g=GAMES[id];if(!g)return;
   const b=getBoard(id);
-  const rows=b.length?`<div class="lb">${b.map((e,i)=>`<div class="lb-row"><span class="lb-rank">${String(i+1).padStart(2,'0')}</span><span class="lb-name">${esc(e.name)}</span><span class="lb-score">${e.score}</span></div>`).join('')}</div>`:'<p class="story-small">No scores yet. Play the drill to set one.</p>';
+  const rows=b.length?`<div class="lb">${b.map((e,i)=>`<div class="lb-row"><span class="lb-rank">${String(i+1).padStart(2,'0')}</span><span class="lb-name">${esc(e.name)}</span><span class="lb-score">${e.score}</span></div>`).join('')}</div>`:'<p class="story-small">No scores yet — the archive only keeps what you run.</p>';
   openModal('LEADERBOARD',g.title+' · TOP SCORES',rows);
 }
 function openGamesRoom(){
   const html=`<div class="games-room">${Object.values(GAMES).map(g=>{
     const best=getBoard(g.id)[0];
     return `<article class="game-row"><div class="game-row-main"><div class="game-row-kicker">${g.tag}</div><div class="game-row-title">${g.title}</div><div class="game-row-desc">${g.desc}</div><div class="game-row-best">BEST · ${best?esc(best.name)+' — '+best.score:'NOT PLAYED'}</div></div><div class="game-row-actions"><button class="game-btn" type="button" onclick="startGame('${g.id}')">PLAY</button><button class="game-btn" type="button" onclick="openLeaderboard('${g.id}')">SCORES</button></div></article>`}).join('')}</div>`;
-  openModal('GAMES','V1.1 · MINI DRILLS',html);
+  openModal('GAMES','V1.1 · MINI GAMES',html);
 }
 
 /* ---- 1. LEAD INVADERS ---- */
@@ -504,53 +504,169 @@ GAMES.closeDeal.build=function(host,done){
   onKey(e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();fire()}});
 };
 
-/* ---- 5. AUTO FLOW ---- */
-const AUTO_BLOCKS=['TRIGGER','FILTER','EMAIL','LOG'];
+/* ---- 5. AUTO FLOW (side-scroller runner) ---- */
 GAMES.autoFlow.build=function(host,done){
-  const pad=el('div','af-pad');
-  const roundEl=el('div','game-stat','ROUND · 1');
+  const W=620,H=300;
+  const c=el('canvas','li-canvas af-canvas');c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  const GROUND=H-44;
+  const GRAV=0.62,JUMP=-13.5;
+  let score=0,lives=3,dist=0,speed=4.4,jumpV=0,onGround=true,dead=false,invuln=0,packets=0,last=performance.now(),spawnIn=140;
   const scoreEl=el('div','game-stat','SCORE · 0');
-  const livesEl=el('div','game-stat','LIVES · 3');
-  const msgEl=el('div','game-msg','WATCH, THEN REPEAT.');
-  const hud=el('div','game-hud');hud.appendChild(roundEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','WATCH THE SEQUENCE, THEN REPEAT IT BY CLICKING THE BLOCKS · 3 LIVES'));
-  host.appendChild(hud);host.appendChild(msgEl);host.appendChild(pad);
-  const btns=AUTO_BLOCKS.map(b=>{const x=el('button','af-block',b);x.type='button';pad.appendChild(x);return x});
-  let seq=[],step=0,score=0,lives=3,locked=true,over=false;
-  function replay(){
-    step=0;locked=true;msgEl.textContent='WATCH…';
-    let d=0;
-    seq.forEach(b=>{
-      setTimeout(()=>{const bi=AUTO_BLOCKS.indexOf(b);btns[bi].classList.add('lit');setTimeout(()=>btns[bi].classList.remove('lit'),480)},d);
-      d+=700;
-    });
-    setTimeout(()=>{locked=false;msgEl.textContent='YOUR TURN · '+seq.length+' BLOCK'+(seq.length>1?'S':'')},d+250);
+  const packEl=el('div','game-stat','PACKETS · 0');
+  const livesEl=el('div','game-stat','LIVES · '+lives);
+  const distEl=el('div','game-stat','METERS · 0');
+  const hud=el('div','game-hud');hud.appendChild(distEl);hud.appendChild(packEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','SPACE / CLICK TO JUMP · CATCH LEAD PACKETS · JUMP THE MANUAL DEAD ENDS'));
+  host.appendChild(hud);host.appendChild(c);
+  const pad=el('div','game-pad');
+  const jumpBtn=el('button','game-pad-btn','JUMP ▲');jumpBtn.type='button';
+  const down=()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:' ',bubbles:true}));
+  const up=()=>window.dispatchEvent(new KeyboardEvent('keyup',{key:' ',bubbles:true}));
+  jumpBtn.addEventListener('pointerdown',e=>{e.preventDefault();down()});
+  jumpBtn.addEventListener('pointerup',up);
+  jumpBtn.addEventListener('pointerleave',up);
+  jumpBtn.addEventListener('pointercancel',up);
+  pad.appendChild(jumpBtn);
+  host.appendChild(pad);
+  const player={x:86,w:18,h:20,y:0};
+  const obstacles=[],packs=[];
+  let scrollA=0,scrollB=0,milestone=400;
+  function spawn(){
+    const r=Math.random();
+    if(r<0.52)obstacles.push({type:'node',x:W+30,y:GROUND-44,w:20,h:44});
+    else if(r<0.8)obstacles.push({type:'tab',x:W+30,y:GROUND-30,w:16,h:30});
+    else obstacles.push({type:'email',x:W+30,y:GROUND-13,w:22,h:13});
+    if(Math.random()<0.62)packs.push({x:W+70,y:GROUND-30-Math.random()*70,size:8,o:0,t:Math.random()*6.28,got:false});
   }
-  function startRound(){
-    if(over)return;
-    seq.push(pick(AUTO_BLOCKS));
-    if(seq.length>6){over=true;msgEl.textContent='PIPELINE AUTOMATED';setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900);return}
-    roundEl.textContent='ROUND · '+seq.length;
-    replay();
+  function jump(){
+    if(dead)return;
+    if(onGround){jumpV=JUMP;onGround=false;sfx(520,.12,'square',.03,760)}
   }
-  btns.forEach((btn,bi)=>{
-    btn.onclick=()=>{
-      if(locked||over)return;
-      if(AUTO_BLOCKS[bi]===seq[step]){
-        btn.classList.add('ok');setTimeout(()=>btn.classList.remove('ok'),200);
-        step++;
-        if(step===seq.length){
-          const add=100*seq.length;score+=add;scoreEl.textContent='SCORE · '+score;
-          setTimeout(startRound,500);
-        }
-      }else{
-        lives--;livesEl.textContent='LIVES · '+Math.max(0,lives);
-        if(lives<=0){over=true;msgEl.textContent='FLOW BROKE · START SMALLER';setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900)}
-        else replay();
+  function finish(msg){
+    if(dead)return;dead=true;
+    stopLoop();
+    const m=el('div','game-msg',msg);host.appendChild(m);
+    setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900);
+  }
+  function frame(now){
+    const dt=Math.min(50,now-last);last=now;
+    if(!dead){
+      speed=Math.min(11,4.4+dist/260);
+      dist+=speed*(dt/16.6);
+      distEl.textContent='METERS · '+Math.round(dist);
+      score+=Math.round(speed);scoreEl.textContent='SCORE · '+score;
+      if(dist>=milestone){milestone+=400;sfx(440,.12,'square',.03,880)}
+      if(dist>=1500){finish('PIPELINE AUTOMATED');return}
+      if(!onGround){
+        jumpV+=GRAV*(dt/16.6);
+        player.y+=jumpV*(dt/16.6);
+        if(player.y>=0){player.y=0;onGround=true;jumpV=0}
       }
-    };
+      spawnIn-=dt;
+      if(spawnIn<=0){spawn();spawnIn=Math.max(420,1500-speed*55)}
+      obstacles.forEach(o=>o.x-=speed*(dt/16.6));
+      for(let i=obstacles.length-1;i>=0;i--)if(obstacles[i].x<-40)obstacles.splice(i,1);
+      packs.forEach(p=>{p.x-=speed*(dt/16.6);p.t+=0.1});
+      for(let i=packs.length-1;i>=0;i--)if(packs[i].x<-30)packs.splice(i,1);
+      invuln-=dt;
+      const px=player.x,py=GROUND-player.y;
+      for(const o of obstacles){
+        if(!o.pass&&o.x<px+player.w&&o.x+o.w>px&&GROUND-o.h<py+player.h){
+          if(invuln<=0){
+            lives--;livesEl.textContent='LIVES · '+Math.max(0,lives);
+            invuln=1100;o.pass=true;score=Math.max(0,score-60);scoreEl.textContent='SCORE · '+score;
+            sfx(140,.3,'sawtooth',.05,70);
+            if(lives<=0){sfx(120,.5,'sawtooth',.06,55);finish('FLOW BROKE · START SMALLER');return}
+          }
+        }
+      }
+      for(const p of packs){
+        if(!p.got&&p.x<px+player.w+6&&p.x+p.size>px-6&&p.y+p.size>py-6&&p.y<py+player.h+6){
+          p.got=true;packets++;score+=40;packEl.textContent='PACKETS · '+packets;scoreEl.textContent='SCORE · '+score;
+          sfx(660,.1,'square',.03,1320);
+        }
+      }
+      scrollA=(scrollA+speed*(dt/16.6))%32;
+      scrollB=(scrollB+speed*0.4*(dt/16.6))%48;
+    }
+    draw(now);
+    if(!dead)gameState.raf=requestAnimationFrame(frame);
+  }
+  function drawNode(o){
+    const x=o.x,y=o.y;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(x+4,y,12,8);
+    ctx.fillRect(x,y+8,20,8);
+    ctx.fillRect(x+4,y+16,12,6);
+    ctx.fillRect(x+8,y+22,4,10);
+    ctx.fillRect(x+14,y+22,4,10);
+    ctx.fillStyle='#000';
+    ctx.fillRect(x+7,y+2,6,3);
+  }
+  function drawTab(o){
+    const x=o.x,y=o.y;
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillRect(x+3,y+18,12,12);
+    ctx.fillStyle='#fff';
+    ctx.fillRect(x,y,16,20);
+    ctx.fillStyle='#000';
+    ctx.fillRect(x+3,y+5,10,2);
+    ctx.fillRect(x+3,y+9,10,2);
+    ctx.fillRect(x+3,y+13,6,2);
+  }
+  function drawEmail(o){
+    const x=o.x,y=o.y;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(x,y,22,13);
+    ctx.fillStyle='#000';
+    ctx.beginPath();ctx.moveTo(x,y+2);ctx.lineTo(x+11,y+8);ctx.lineTo(x+22,y+2);ctx.lineTo(x+22,y);ctx.lineTo(x,y);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillRect(x+11,y+6,1,5);
+  }
+  function draw(now){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,.06)';
+    for(let i=-1;i<8;i++){
+      const sx=i*48-scrollB;
+      ctx.fillRect(sx,H-118,26,118);
+      ctx.fillRect(sx+14,H-140,16,140);
+    }
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,GROUND,W,2);
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    for(let i=-1;i<21;i++){
+      const sx=i*32-scrollA;
+      ctx.fillRect(sx,GROUND+8,16,3);
+      ctx.fillRect(sx+8,GROUND+16,8,3);
+    }
+    obstacles.forEach(o=>{if(o.type==='node')drawNode(o);else if(o.type==='tab')drawTab(o);else drawEmail(o)});
+    packs.forEach(p=>{
+      if(p.got)return;
+      const b=Math.sin(p.t)*1.2;
+      ctx.fillStyle='#fff';
+      ctx.fillRect(p.x-b,p.y,8,10);
+      ctx.fillStyle='#000';
+      ctx.fillRect(p.x+2-b,p.y+3,4,4);
+      ctx.fillStyle='rgba(255,255,255,.4)';
+      ctx.fillRect(p.x-4-b,p.y+4,3,2);
+    });
+    const px=player.x,py=GROUND-player.y;
+    if(invuln>0&&Math.floor(now/90)%2===0)return;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(px,py,18,20);
+    ctx.fillStyle='#000';
+    ctx.fillRect(px+4,py+4,10,12);
+    ctx.fillStyle='#fff';
+    ctx.fillRect(px+7,py+7,4,6);
+    ctx.fillStyle='rgba(255,255,255,.35)';
+    ctx.fillRect(px-7,py+4,4,3);
+    ctx.fillRect(px-13,py+9,4,3);
+  }
+  onKey(e=>{
+    if(e.key===' '||e.key==='ArrowUp'||e.key.toLowerCase()==='w'){e.preventDefault();jump()}
   });
-  startRound();
+  gameState.raf=requestAnimationFrame(frame);
 };
 
 /* ---- 6. BLACKJACK ---- */

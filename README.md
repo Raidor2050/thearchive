@@ -26,16 +26,16 @@ python -m http.server
 - **Achievements** unlock after enough presses.
 - Sound on/off toggle with retro bleeps and ambient loop.
 - Progress is saved locally in the browser (`localStorage`).
-- **V1.1 mini drills** — six short games that appear when the Guide touches their topic: **Lead Invaders**, **Email Build**, **Partner Call**, **Onboard Pack**, **Close the Deal** and **Auto Flow**. Each is skippable, scores with name entry, and keeps a top-10 leaderboard per game. All six must be completed before the final page offers contact.
+- **V1.1 mini games** — six short playable stories that appear when the Guide touches their topic: **Lead Invaders**, **Email Build**, **Partner Call**, **Onboard Pack**, **Close the Deal** and **Auto Flow**. Each is skippable, scores with name entry, and keeps a top-10 leaderboard per game. All six must be lived through before the final page offers contact.
 
 ## Structure
 
 ```
 index.html   — app shell and start screen
 styles.css   — monochrome pixel UI
-games.css    — V1.1 mini drill UI
+games.css    — V1.1 mini game UI
 script.js    — dialogue data, state, rooms and audio
-games.js     — V1.1 mini drill engine and leaderboards
+games.js     — V1.1 mini game engine and leaderboards
 assets/      — favicon
 ```
 
