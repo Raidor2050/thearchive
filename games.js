@@ -68,6 +68,7 @@ function startGame(id){
   if(gameState.open)return;
   const g=GAMES[id];if(!g)return;
   if(typeof closeModal==='function')closeModal();
+  if(typeof closeNav==='function')closeNav();
   gameState.open=true;gameState.id=id;gameState.results=false;
   const panel=g$('gamePanel');
   panel.innerHTML='';
