@@ -164,6 +164,22 @@ GAMES.leadSort.build=function(host,done){
   const hud=el('div','game-hud');hud.appendChild(keepEl);hud.appendChild(comboEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);hud.appendChild(timeEl);
   host.appendChild(el('div','game-hint','←/→ OR A/D MOVE · SPACE FIRE · DODGE THE RETURN FIRE · SHOOT THE FIT LEADS'));
   host.appendChild(hud);host.appendChild(c);
+  const pad=el('div','game-pad');
+  function padBtn(key,label){
+    const b=el('button','game-pad-btn',label);b.type='button';
+    const down=()=>window.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));
+    const up=()=>window.dispatchEvent(new KeyboardEvent('keyup',{key,bubbles:true}));
+    b.addEventListener('pointerdown',e=>{e.preventDefault();down()});
+    b.addEventListener('pointerup',up);
+    b.addEventListener('pointerleave',up);
+    b.addEventListener('pointercancel',up);
+    pad.appendChild(b);
+    return b;
+  }
+  padBtn('ArrowLeft','◀ LEFT');
+  padBtn('ArrowRight','RIGHT ▶');
+  padBtn(' ','FIRE');
+  host.appendChild(pad);
   const people=[];
   let fitLeft=0;
   for(let r=0;r<rows;r++)for(let i=0;i<cols;i++){
