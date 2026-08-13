@@ -71,6 +71,13 @@ body.modal-open{overflow:hidden}
 .story-modal p{margin:0 0 10px;font-size:20px;line-height:1.35}
 .story-lead{font-size:28px!important;color:#fff}
 .story-small{color:#888;font-size:16px!important}
+.ach-grid{display:grid;gap:8px;margin:12px 0;grid-column:1/-1}
+.ach{display:flex;gap:12px;align-items:center;border:2px solid #444;padding:10px 12px}
+.ach.done{border-color:#fff;box-shadow:4px 4px 0 #fff}
+.ach-mark{width:22px;height:22px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#444;font-size:16px;flex:none}
+.ach.done .ach-mark{color:#fff}
+.ach-name{font-size:16px;letter-spacing:.05em}
+.ach-desc{font-size:13px;color:#888}
 .mini-avatar{width:100px;height:120px;border:3px solid #fff;box-shadow:5px 5px 0 #fff;position:relative}
 .mini-avatar::before{content:'LV 29';position:absolute;left:8px;bottom:8px;background:#000;border:2px solid #fff;padding:4px 6px;font-size:12px;z-index:2}
 .quest-story,.tool-story{display:grid;gap:12px}

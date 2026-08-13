@@ -16,8 +16,8 @@ const GAMES = {
   },
   partnerCall: {
     id:'partnerCall', title:'PARTNER CALL', tag:'CONTACT',
-    desc:'Answer partners and prospects. Keep the conversation alive.',
-    tips:['Clarify expectations. Remove friction.','Make the next step obvious.','Every reply is a chance to build trust.','Never let a partner hang.','Warm beats correct. Every time.']
+    desc:'Tic-tac-toe against the partner. Make a line before they do.',
+    tips:['Start in a corner.','Block before you build.','Two threats beat one.','A draw is still a conversation.','Patience wins the round.']
   },
   closeDeal: {
     id:'closeDeal', title:'CLOSE THE DEAL', tag:'CLOSING',
@@ -123,6 +123,7 @@ function showResults(score){
     state.leaderboard[gameState.id]=b.slice(0,10);
     save();
     msg.textContent='SCORE SAVED TO LEADERBOARD';
+    unlockAchievement('saveScore');
     saveBtn.disabled=true;input.disabled=true;
     lbBtn.classList.remove('hidden');
   }
@@ -338,52 +339,77 @@ GAMES.emailBuild.build=function(host,done){
 };
 
 /* ---- 3. PARTNER CALL ---- */
-const PARTNER_LINES=[
-  {s:'Partner: "Can you share the reporting template?"',o:['Sure, here it is. Want a quick walkthrough?','I sent it last quarter.','It is internal only.'],a:0},
-  {s:'Partner: "Our audience did not click well last month."',o:['Let us review the data and test a new angle.','That is on your side.','Nothing we can do.'],a:0},
-  {s:'Prospect: "How much does it cost?"',o:['Here are the tiers. What fits your budget?','Too expensive for you?','Prices are secret.'],a:0},
-  {s:'Partner: "Can we change the payout terms?"',o:['We have some flexibility. Let me check.','No.','Ask someone else.'],a:0},
-  {s:'Prospect: "I am busy this month."',o:['No rush. I will send a one-pager you can review.','Then you are not a good fit.','I will keep emailing you.'],a:0},
-  {s:'Partner: "We need the assets next week."',o:['I will send them by Friday and confirm.','Next week is too soon.','Use your own.'],a:0},
-  {s:'Prospect: "Who else are you working with?"',o:['I can share a few relevant case studies.','None of your business.','Everyone.'],a:0},
-  {s:'Partner: "The campaign is live. Now what?"',o:['We track performance and optimize together.','Now we wait.','We are done.'],a:0},
-  {s:'Prospect: "I need time to think."',o:['Of course. I will send the details to make it easy.','I need an answer now.','Fine.'],a:0},
-  {s:'Partner: "Payouts are late again."',o:['I will check the payment pipeline today.','Not my problem.','Try again next month.'],a:0}
-];
 GAMES.partnerCall.build=function(host,done){
-  const qs=shuffle(PARTNER_LINES).slice(0,8);
-  let qi=0,score=0,combo=0,timer=null;
-  const hud=el('div','game-hud');
-  const sit=el('div','pc-sit','');
-  const opts=el('div','pc-opts');
-  host.appendChild(el('div','game-hint','Pick the response that keeps the relationship moving. (1-3)'));
-  host.appendChild(hud);host.appendChild(sit);host.appendChild(opts);
-  function render(){
-    if(qi>=qs.length){clearInterval(timer);done(score);return}
-    const q=qs[qi];
-    const order=shuffle(q.o);
-    const correctIdx=order.indexOf(q.o[q.a]);
-    sit.textContent=q.s;
-    opts.innerHTML='';
-    order.forEach((o,oi)=>{const b=el('button','game-btn',(oi+1)+' · '+o);b.type='button';b.onclick=()=>pick(oi===correctIdx,false);opts.appendChild(b)});
-    const tEl=el('div','pc-timer','');
-    hud.innerHTML='';
-    hud.appendChild(el('div','game-stat','Q · '+(qi+1)+' / '+qs.length));
-    hud.appendChild(el('div','game-stat','SCORE · '+score));
-    hud.appendChild(el('div','game-stat','COMBO · x'+combo));
-    hud.appendChild(tEl);
-    clearInterval(timer);
-    const ms=6000,start=performance.now();
-    timer=setInterval(()=>{const left=ms-(performance.now()-start);tEl.textContent='TIME · '+Math.max(0,Math.round(left/1000))+'s';if(left<=0){clearInterval(timer);pick(false,true)}},100);
+  const cells=[];const grid=['','','','','','','','',''];
+  const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let round=1,score=0,record=[0,0,0],myTurn=true,busy=false,over=false;
+  const roundEl=el('div','game-stat','ROUND · 1 / 3');
+  const scoreEl=el('div','game-stat','SCORE · 0');
+  const recEl=el('div','game-stat','W · 0 / D · 0 / L · 0');
+  const hud=el('div','game-hud');hud.appendChild(roundEl);hud.appendChild(scoreEl);hud.appendChild(recEl);
+  const msg=el('div','game-stat','YOU ARE ✕ · PARTNER IS ✓');
+  const board=el('div','ttt-board');
+  const actions=el('div','game-actions');
+  host.appendChild(el('div','game-hint','TAP AN EMPTY SQUARE OR PRESS 1-9 · MAKE A LINE BEFORE THE PARTNER DOES'));
+  host.appendChild(hud);host.appendChild(msg);host.appendChild(board);host.appendChild(actions);
+  for(let i=0;i<9;i++){
+    const c=el('button','ttt-cell','');c.type='button';c.dataset.i=i;
+    c.onclick=()=>play(i);
+    cells.push(c);board.appendChild(c);
   }
-  function pick(correct,timeout){
-    clearInterval(timer);
-    if(correct){combo++;score+=100+50*combo}
-    else{combo=0;if(!timeout)score=Math.max(0,score-40)}
-    qi++;render();
+  function mark(i,sym){grid[i]=sym;cells[i].textContent=sym;cells[i].classList.add(sym==='✕'?'x':'o');cells[i].disabled=true;sfx(sym==='✕'?760:520,.08,'square',.02)}
+  function winner(){for(const l of lines){const [a,b,c]=l;if(grid[a]&&grid[a]===grid[b]&&grid[b]===grid[c])return {sym:grid[a],l}}return null}
+  function empty(){const r=[];for(let i=0;i<9;i++)if(!grid[i])r.push(i);return r}
+  function updateHud(){roundEl.textContent='ROUND · '+round+' / 3';scoreEl.textContent='SCORE · '+score;recEl.textContent='W · '+record[0]+' / D · '+record[1]+' / L · '+record[2]}
+  function canWin(p){for(const l of lines){const [a,b,c]=l;if(grid[a]===p&&grid[a]===grid[b]&&!grid[c])return c;if(grid[a]===p&&grid[a]===grid[c]&&!grid[b])return b;if(grid[b]===p&&grid[b]===grid[c]&&!grid[a])return a}return -1}
+  function aiMove(){
+    const e=empty();
+    if(!e.length)return;
+    let m=-1;
+    if(Math.random()<.22)m=e[Math.floor(Math.random()*e.length)];
+    if(m<0)m=canWin('✓');
+    if(m<0)m=canWin('✕');
+    if(m<0&&!grid[4])m=4;
+    if(m<0){const cor=[0,2,6,8].filter(i=>!grid[i]);if(cor.length)m=cor[Math.floor(Math.random()*cor.length)]}
+    if(m<0)m=e[Math.floor(Math.random()*e.length)];
+    mark(m,'✓');
+    myTurn=true;busy=false;
+    const w=winner();
+    if(w)endRound(w);
+    else if(!empty().length)endRound(null);
   }
-  onKey(e=>{if(/^[1-3]$/.test(e.key)){const b=opts.querySelectorAll('.game-btn')[Number(e.key)-1];if(b)b.click()}});
-  render();
+  function play(i){
+    if(over||busy||!myTurn||grid[i])return;
+    mark(i,'✕');
+    myTurn=false;
+    const w=winner();
+    if(w){endRound(w);return}
+    if(!empty().length){endRound(null);return}
+    busy=true;
+    setTimeout(()=>{if(gameState.open&&gameState.id==='partnerCall')aiMove()},420);
+  }
+  function endRound(w){
+    over=true;busy=false;myTurn=false;
+    if(!w){record[1]++;score+=100;sfx(660,.2,'square',.03,660)}
+    else if(w.sym==='✕'){record[0]++;score+=200;sfx(880,.25,'square',.03,1320)}
+    else{record[2]++;score=Math.max(0,score-30);sfx(140,.3,'sawtooth',.05,70)}
+    updateHud();
+    msg.textContent=!w?'ROUND DRAWN':(w.sym==='✕'?'ROUND WON':'ROUND LOST');
+    const nxt=el('button','game-btn',round>=3?'FINISH':'NEXT ROUND');nxt.type='button';
+    nxt.onclick=()=>{
+      if(round>=3){done(score);return}
+      round++;over=false;myTurn=true;busy=false;
+      for(let i=0;i<9;i++){grid[i]='';cells[i].textContent='';cells[i].disabled=false;cells[i].classList.remove('x','o')}
+      msg.textContent='YOU ARE ✕ · PARTNER IS ✓';
+      updateHud();
+      nxt.remove();
+    };
+    actions.appendChild(nxt);
+  }
+  onKey(e=>{
+    if(/^[1-9]$/.test(e.key)){e.preventDefault();play(Number(e.key)-1)}
+  });
+  updateHud();
 };
 
 /* ---- 4. CLOSE THE DEAL ---- */

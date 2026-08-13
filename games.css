@@ -34,9 +34,11 @@
 .eb-chip.used{opacity:.25;cursor:default}
 .eb-chip.wrong{outline:3px solid #fff;outline-offset:2px;animation:gShake .18s steps(2,end)}
 
-.pc-sit{min-height:64px;font-size:20px;border:2px solid #fff;padding:12px;display:flex;align-items:center}
-.pc-opts{display:grid;gap:8px}
-.pc-timer{font-size:14px;color:#888}
+.ttt-board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px;width:100%;margin:0 auto}
+.ttt-cell{aspect-ratio:1/1;border:2px solid #fff;background:#000;color:#fff;font-size:42px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ttt-cell:hover:not(:disabled){background:#111}
+.ttt-cell:disabled{cursor:default}
+.ttt-cell.o{opacity:.45}
 
 .cd-track{position:relative;height:60px;border:2px solid #fff;cursor:crosshair;background:#000;overflow:hidden}
 .cd-zone{position:absolute;top:0;bottom:0;border:2px solid #fff;background:#fff;opacity:.85}
@@ -72,7 +74,7 @@
 
 @media(max-width:760px){
   .game-title{font-size:19px}
-  .pc-sit{font-size:17px}
+  .ttt-cell{font-size:34px}
   .af-pad{grid-template-columns:repeat(2,1fr)}
   .op-grid{grid-template-columns:1fr}
   .game-row{grid-template-columns:1fr}

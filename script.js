@@ -102,15 +102,27 @@ const quests = [
  ['THE BACKFLIP','Do a backflip.','todo']
 ];
 
-const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,playerName:'',leaderboard:{},playedGames:[]};
+const ACHIEVEMENTS={
+  leadSort:{name:'LEAD INVADERS',desc:'Played the lead sourcing drill.'},
+  emailBuild:{name:'EMAIL BUILD',desc:'Played the outreach drill.'},
+  partnerCall:{name:'PARTNER CALL',desc:'Played the contact drill.'},
+  onboardPack:{name:'ONBOARD PACK',desc:'Played the onboarding drill.'},
+  closeDeal:{name:'CLOSE THE DEAL',desc:'Played the closing drill.'},
+  autoFlow:{name:'AUTO FLOW',desc:'Played the automation drill.'},
+  allGames:{name:'COMPLETIONIST',desc:'Played all six mini drills.'},
+  saveScore:{name:'ON THE BOARD',desc:'Saved a score to a leaderboard.'},
+  patron:{name:'ARCHIVE PATRON',desc:'Pressed forward twelve times.'}
+};
+
+const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,achievements:[],playerName:'',leaderboard:{},playedGames:[]};
 let audioCtx=null,ambientTimer=null,autoSeq=0;
 const $=id=>document.getElementById(id);
 const GAME_ORDER=['leadSort','emailBuild','partnerCall','onboardPack','closeDeal','autoFlow'];
 function remainingGames(){return GAME_ORDER.filter(id=>!state.playedGames.includes(id))}
-function markGamePlayed(id){if(id&&!state.playedGames.includes(id)){state.playedGames.push(id);save()}}
+function markGamePlayed(id){if(id&&!state.playedGames.includes(id)){state.playedGames.push(id);save();unlockAchievement(id);if(state.playedGames.length>=GAME_ORDER.length)unlockAchievement('allGames')}}
 const ui={start:$('startScreen'),begin:$('beginBtn'),experience:$('experience'),chapter:$('microLine'),card:$('dialogueCard'),speaker:$('speakerName'),sceneMark:$('sceneMark'),text:$('dialogueText'),continue:$('continueBtn'),choices:$('choices'),quests:$('questsBtn'),toolkit:$('toolkitBtn'),profile:$('profileBtn'),contact:$('contactBtn'),home:$('homeBtn'),achievements:$('achievementsBtn'),back:$('backBtn'),sound:$('soundBtn'),save:$('saveState'),modal:$('modal'),backdrop:$('modalBackdrop'),modalCard:$('modalCard'),modalKicker:$('modalKicker'),modalSub:$('modalSub'),modalContent:$('modalContent'),modalClose:$('modalClose'),toast:$('toast'),gamePanel:$('gamePanel'),gamesBtn:$('gamesBtn'),miniBtn:$('miniBtn')};
 function save(){try{localStorage.setItem('raiyan-ruby-ui-v11',JSON.stringify({...state,timer:null}))}catch{}ui.save.textContent=state.achievementsUnlocked?'ACHIEVEMENTS':'LOCAL';ui.miniBtn.hidden=state.playedGames.length===0}
-function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}'));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}if(!Array.isArray(state.playedGames))state.playedGames=[]}catch{}}
+function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}'));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}if(!Array.isArray(state.playedGames))state.playedGames=[];if(!Array.isArray(state.achievements))state.achievements=[]}catch{}}
 function current(){return narrativeScenes[state.index]}
 function textFor(scene){return typeof scene.text==='function'?scene.text():scene.text}
 function ensureAudio(){if(!state.sound)return;try{audioCtx ||= new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch{}}
@@ -125,13 +137,32 @@ function renderScene(){clearInterval(state.timer);state.typing=true;state.charIn
 function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(gid,s.id)},250)}else if(s.choices){autoSeq=0}else{autoSeq++;if(s.next&&autoSeq>=4){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;if(!state.typing)next()},1600)}}save()}
 function choose(i,next){state.choices.push({scene:current().id,choice:i});choiceSound();if(next==='contact'){openContact();save();return}goto(next)}
 function goto(id){const idx=narrativeScenes.findIndex(s=>s.id===id);if(idx<0)return;state.history.push(state.index);state.index=idx;advanceSound();renderScene();save()}
-function unlockAchievements(){if(state.achievementsUnlocked)return;state.achievementsUnlocked=true;ui.achievements.hidden=false;ui.achievements.classList.add('unlocked');save();toast('ACHIEVEMENTS UNLOCKED');choiceSound()}
+function unlockAchievement(id){
+  if(!ACHIEVEMENTS[id])return;
+  if(!state.achievements)state.achievements=[];
+  if(state.achievements.includes(id))return;
+  state.achievements.push(id);
+  state.achievementsUnlocked=true;
+  ui.achievements.hidden=false;
+  ui.achievements.classList.add('unlocked');
+  save();
+  toast('ACHIEVEMENT UNLOCKED · '+ACHIEVEMENTS[id].name);
+  choiceSound();
+}
+function unlockAchievements(){unlockAchievement('patron')}
 function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;if(s.next)goto(s.next);else toast('END OF FILE')}
 function back(){if(state.typing){finishTyping();return}const prev=state.history.pop();if(prev===undefined)return;autoSeq=0;state.index=prev;advanceSound();renderScene();save()}
-function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.playedGames=[];autoSeq=0;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
+function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.achievements=[];state.playedGames=[];autoSeq=0;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
 function openModal(kicker,sub,html){ui.modalKicker.textContent=kicker;ui.modalSub.textContent=sub;ui.modalContent.innerHTML=html;ui.modal.classList.remove('hidden');document.body.classList.add('modal-open');requestAnimationFrame(()=>ui.modalCard.focus())}
 function closeModal(){ui.modal.classList.add('hidden');document.body.classList.remove('modal-open')}
-function openAchievements(){openModal('ACHIEVEMENTS','The archive kept score.',`<div class="story-modal"><div class="modal-portrait mini-avatar" aria-hidden="true"></div><div><p class="story-lead">You stayed long enough for the archive to notice.</p><p>${state.found.length} optional notes found. ${state.xp} XP earned.</p><p class="story-small">The number is fake. The curiosity is not.</p></div></div>`)}
+function openAchievements(){
+  const ach=state.achievements||[];
+  const cards=Object.keys(ACHIEVEMENTS).map(id=>{
+    const a=ACHIEVEMENTS[id],done=ach.includes(id);
+    return `<article class="ach${done?' done':''}"><div class="ach-mark">${done?'✓':'·'}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div></article>`;
+  }).join('');
+  openModal('ACHIEVEMENTS','The archive kept score.',`<div class="story-modal"><p class="story-lead">You stayed long enough for the archive to notice.</p><div class="ach-grid">${cards}</div><p class="story-small">${ach.length} / ${Object.keys(ACHIEVEMENTS).length} achievements · ${state.found.length} notes · ${state.xp} XP.</p><p class="story-small">The number is fake. The curiosity is not.</p></div>`);
+}
 function openQuests(){openModal('QUESTS','The chapters completed so far.',`<div class="quest-story">${quests.map(([t,d,s],i)=>`<article class="quest ${s}"><div class="quest-meta">${s==='done'?'ACHIEVED':'PENDING'} · ${String(i+1).padStart(2,'0')}</div><div class="quest-title">${t}</div><div class="quest-copy">${d}</div></article>`).join('')}</div>`)}
 function openToolkit(){openModal('TOOLKIT','The equipment behind the work.',`<div class="tool-story">${tools.map(([n,d],i)=>`<article class="tool"><div class="tool-index">${String(i+1).padStart(2,'0')}</div><div><div class="tool-name">${n}</div><div class="tool-note">${d}</div></div></article>`).join('')}</div>`)}
 function openProfile(){openModal('PROFILE','RAIYAN KABIR · LV 29',`<div class="profile-sheet"><div class="avatar-column"><div class="pixel-portrait large" role="img" aria-label="Detailed monochrome pixel avatar of Raiyan Kabir wearing glasses"><div class="hair"></div><div class="face"></div><div class="earL"></div><div class="earR"></div><div class="frameL"></div><div class="frameR"></div><div class="bridge"></div><div class="eye1"></div><div class="eye2"></div><div class="nose"></div><div class="mouth"></div><div class="chin"></div><div class="neck"></div><div class="shirt"></div><div class="collar"></div></div><div class="avatar-caption">AFFILIATE / PARTNERSHIPS / GROWTH</div></div><div class="profile-copy"><div class="profile-head"><div class="profile-title">RAIYAN KABIR</div><div class="profile-sub">AFFILIATE & PARTNERSHIPS GROWTH OPERATOR</div></div><div class="profile-block"><strong>MONSTERCLAW</strong><span>Managed affiliate programs, recruited partners, handled communication, reviewed performance, optimized campaigns and led roughly five affiliate managers for about 1.5 years.</span></div><div class="profile-block"><strong>TRUELY ESIM</strong><span>Ran international affiliate recruitment and partner operations across a working pipeline of roughly 2,000 leads, 300 outreaches, 211 replies and about 100 qualified prospects.</span></div><div class="profile-block"><strong>ZAGER GUITARS</strong><span>Supported creator partnership operations and coordinated 80+ guitar shipments to creators across the US and Canada.</span></div><div class="profile-block"><strong>CORE WORK</strong><span>Affiliate recruitment, publisher sourcing, lead management, outreach, partnership communications, activation, lifecycle management, data analysis, reporting and campaign optimization.</span></div></div></div>`)}
@@ -140,4 +171,4 @@ function toggleSound(){state.sound=!state.sound;ui.sound.textContent=state.sound
 function start(){if(state.started)return;state.started=true;autoSeq=0;ui.start.classList.add('hidden');ui.experience.classList.remove('hidden');ensureAudio();startAmbient();renderScene();save()}
 ui.begin.onclick=start;ui.continue.onclick=e=>{e.stopPropagation();next()};ui.card.onclick=e=>{if(isGameBlocking())return;if(e.target.closest('.choice-btn'))return;next()};ui.back.onclick=back;ui.sound.onclick=toggleSound;ui.quests.onclick=openQuests;ui.toolkit.onclick=openToolkit;ui.profile.onclick=openProfile;ui.contact.onclick=openContact;ui.home.onclick=openHome;ui.achievements.onclick=openAchievements;ui.gamesBtn.onclick=openGamesRoom;ui.miniBtn.onclick=openGamesRoom;ui.modalClose.onclick=closeModal;ui.backdrop.onclick=closeModal;
 window.addEventListener('keydown',e=>{if(isGameBlocking())return;if(e.key==='Enter'&&!state.started){e.preventDefault();start();return}if(!ui.modal.classList.contains('hidden')){if(e.key==='Escape'){e.preventDefault();closeModal()}return}if(!state.started)return;if(e.key==='Enter'){e.preventDefault();state.enterCount++;if(state.enterCount>=12)unlockAchievements();next()}else if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault();back()}else if(/^[1-3]$/.test(e.key)&&current().choices){const i=Number(e.key)-1;if(current().choices[i])choose(i,current().choices[i].next)}else if(e.key.toLowerCase()==='q')openQuests();else if(e.key.toLowerCase()==='t')openToolkit();else if(e.key.toLowerCase()==='p')openProfile();else if(e.key.toLowerCase()==='c')openContact();else if(e.key.toLowerCase()==='h')openHome();else if(e.key.toLowerCase()==='g')openGamesRoom()});
-load();ui.sound.textContent=state.sound?'SOUND ON':'SOUND OFF';ui.sound.setAttribute('aria-pressed',String(state.sound));ui.miniBtn.hidden=state.playedGames.length===0;if(state.started){ui.start.classList.add('hidden');ui.experience.classList.remove('hidden');if(state.achievementsUnlocked)ui.achievements.hidden=false;ensureAudio();startAmbient();renderScene()}
+load();ui.sound.textContent=state.sound?'SOUND ON':'SOUND OFF';ui.sound.setAttribute('aria-pressed',String(state.sound));ui.miniBtn.hidden=state.playedGames.length===0;if(state.started){ui.start.classList.add('hidden');ui.experience.classList.remove('hidden');if(state.achievementsUnlocked||(state.achievements&&state.achievements.length))ui.achievements.hidden=false;ensureAudio();startAmbient();renderScene()}
