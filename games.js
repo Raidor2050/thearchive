@@ -26,8 +26,8 @@ const GAMES = {
   },
   autoFlow: {
     id:'autoFlow', title:'AUTO FLOW', tag:'AUTOMATION',
-    desc:'Run the pipeline. Jump the manual dead ends, catch the lead packets, reach the fully automated run.',
-    tips:['Hold jump to go higher.','Catch the lead packets. Cores are worth more.','Jump the manual tabs. Dodge the stale mail.','Speed builds with every meter.','The pipeline remembers everything you catch.']
+    desc:'Run the pipeline. Tap to jump the manual dead ends, catch the lead packets, reach the fully automated run.',
+    tips:['Tap to jump. Holding does nothing extra.','One hit breaks the flow. Time your taps.','Catch the lead packets. Cores are worth more.','Jump the manual tabs. Dodge the stale mail.','Speed builds with every meter. The pipeline runs itself.']
   },
   onboardPack: {
     id:'onboardPack', title:'BLACKJACK', tag:'ONBOARDING',
@@ -102,8 +102,9 @@ function showResults(score){
   if(score==null){
     body.appendChild(el('div','game-score','SKIPPED'));
     body.appendChild(el('div','game-msg','No score recorded.'));
+    const retry=el('button','game-btn','RETRY');retry.type='button';retry.onclick=retryGame;
     const done=el('button','game-btn','DONE');done.type='button';done.onclick=closeGamePanel;
-    body.appendChild(done);
+    body.appendChild(retry);body.appendChild(done);
     return;
   }
   body.appendChild(el('div','game-score','SCORE · '+score));
@@ -115,6 +116,7 @@ function showResults(score){
   const lbBtn=el('button','game-btn hidden','VIEW LEADERBOARD');lbBtn.type='button';
   const msg=el('div','game-msg','');
   const doneBtn=el('button','game-btn','DONE');doneBtn.type='button';doneBtn.onclick=closeGamePanel;
+  const retryBtn=el('button','game-btn','RETRY');retryBtn.type='button';retryBtn.onclick=retryGame;
   function saveScore(){
     const name=(input.value.trim()||'PLAYER').slice(0,14);
     state.playerName=name;
@@ -132,8 +134,16 @@ function showResults(score){
   saveBtn.onclick=saveScore;
   lbBtn.onclick=()=>openLeaderboard(gameState.id);
   wrap.appendChild(input);wrap.appendChild(saveBtn);
-  body.appendChild(wrap);body.appendChild(lbBtn);body.appendChild(msg);body.appendChild(doneBtn);
+  body.appendChild(wrap);body.appendChild(lbBtn);body.appendChild(msg);body.appendChild(retryBtn);body.appendChild(doneBtn);
   input.focus();
+}
+function retryGame(){
+  if(!gameState.open)return;
+  stopTips();stopLoop();
+  const id=gameState.id;
+  gameState.generation++;
+  gameState.open=false;gameState.results=false;gameState.id=null;
+  startGame(id);
 }
 function skipGame(){if(!gameState.open)return;stopTips();stopLoop();showResults(null)}
 function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');const card=g$('dialogueCard');panel.classList.remove('open');card.classList.remove('game-mode');const nav=g$('iconNav');if(nav)nav.classList.remove('nav-side');gameState.generation++;const gen=gameState.generation;setTimeout(()=>{if(gen===gameState.generation)panel.innerHTML=''},500);gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
@@ -504,35 +514,29 @@ GAMES.closeDeal.build=function(host,done){
   onKey(e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();fire()}});
 };
 
-/* ---- 5. AUTO FLOW (side-scroller runner) ---- */
+/* ---- 5. AUTO FLOW (Geometry-Dash-style runner) ---- */
 GAMES.autoFlow.build=function(host,done){
-  const W=620,H=300,GROUND=H-46,GOAL=1500,FEET=GROUND-22;
+  const W=620,H=300,GROUND=H-46,GOAL=1500;
   const c=el('canvas','li-canvas af-canvas');c.width=W;c.height=H;
   const ctx=c.getContext('2d');
-  let score=0,lives=3,dist=0,leads=0,speed=4.3,jumpV=0,onGround=true,dead=false,invuln=0;
+  let score=0,dist=0,leads=0,speed=4.3,jumpV=0,onGround=true,dead=false;
   let phase='count',count=3,countT=44,last=performance.now(),nextSpawn=340,chain=0;
   let shakeT=0,flashA=0,landT=0,bannerT=0,banner='',milestone=375;
   const scoreEl=el('div','game-stat','SCORE · 0');
   const leadEl=el('div','game-stat','LEADS · 0');
-  const livesEl=el('div','game-stat','LIVES · '+lives);
   const distEl=el('div','game-stat','METERS · 0');
-  const hud=el('div','game-hud');hud.appendChild(distEl);hud.appendChild(leadEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','HOLD SPACE / CLICK TO JUMP HIGHER · CATCH LEAD PACKETS · REACH THE FULLY AUTOMATED RUN'));
+  const hud=el('div','game-hud');hud.appendChild(distEl);hud.appendChild(leadEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','TAP SPACE / CLICK TO JUMP · ONE HIT ENDS THE RUN · CATCH THE LEAD PACKETS'));
   host.appendChild(hud);host.appendChild(c);
   const pad=el('div','game-pad');
   const jumpBtn=el('button','game-pad-btn','JUMP ▲');jumpBtn.type='button';
   const down=()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:' ',bubbles:true}));
-  const up=()=>window.dispatchEvent(new KeyboardEvent('keyup',{key:' ',bubbles:true}));
   jumpBtn.addEventListener('pointerdown',e=>{e.preventDefault();down()});
-  jumpBtn.addEventListener('pointerup',up);
-  jumpBtn.addEventListener('pointerleave',up);
-  jumpBtn.addEventListener('pointercancel',up);
   pad.appendChild(jumpBtn);
   host.appendChild(pad);
-  const player={x:86,w:18,h:22,y:0};
+  const player={x:86,w:16,h:16,y:0};
   const obstacles=[],packs=[],parts=[],pops=[];
   let scroll=[0,0,0];
-  const jumpHold={on:false};
   let coyoteT=0,bufferT=0;
   function spawn(){
     const r=Math.random();
@@ -552,10 +556,11 @@ GAMES.autoFlow.build=function(host,done){
   function dust(x,y,n,spread){
     for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-.5)*spread,vy:-Math.random()*2.2,life:16+Math.random()*10,size:2+Math.random()*2});
   }
+  function pop(x,y,text){pops.push({x,y,text,life:20})}
   function doJump(){
     if(dead||phase!=='run')return;
     if(onGround||coyoteT>0){
-      jumpV=-12.5;onGround=false;coyoteT=0;bufferT=0;
+      jumpV=-9.5;onGround=false;coyoteT=0;bufferT=0;
       dust(player.x+8,GROUND,4,2.4);sfx(520,.1,'square',.03,820);
     }else{bufferT=120}
   }
@@ -587,10 +592,7 @@ GAMES.autoFlow.build=function(host,done){
       coyoteT=onGround?100:Math.max(0,coyoteT-dt);
       bufferT=Math.max(0,bufferT-dt);
       if(!onGround){
-        const rising=jumpV<0;
-        const grav=rising&&jumpHold.on?0.38:0.6;
-        jumpV+=grav*(dt/16.6);
-        if(!jumpHold.on&&rising&&jumpV<-6.2)jumpV=-6.2;
+        jumpV+=0.66*(dt/16.6);
         player.y+=jumpV*(dt/16.6);
         if(player.y>=0){
           player.y=0;onGround=true;jumpV=0;landT=6;dust(player.x+6,GROUND,3,2);
@@ -602,17 +604,13 @@ GAMES.autoFlow.build=function(host,done){
         for(let i=obstacles.length-1;i>=0;i--)if(obstacles[i].x<-40)obstacles.splice(i,1);
         packs.forEach(p=>{p.x-=speed*(dt/16.6);p.t+=0.1});
         for(let i=packs.length-1;i>=0;i--)if(packs[i].x<-30)packs.splice(i,1);
-        invuln-=dt;
-        const hb={x:player.x+2,y:GROUND-20-player.y,w:14,h:16};
+        const hb={x:player.x+1,y:GROUND-16-player.y,w:14,h:16};
         for(const o of obstacles){
           if(!o.pass&&o.x+2<hb.x+hb.w&&o.x+o.w-2>hb.x&&GROUND-o.h+2<hb.y+hb.h&&hb.y<GROUND-2){
-            if(invuln<=0){
-              lives--;livesEl.textContent='LIVES · '+Math.max(0,lives);
-              invuln=1200;o.pass=true;chain=0;shakeT=14;flashA=.55;
-              for(let i=0;i<8;i++)parts.push({x:hb.x+7,y:hb.y+8,vx:(Math.random()-.5)*4,vy:(Math.random()-.6)*4,life:20,size:2});
-              sfx(130,.3,'sawtooth',.06,60);
-              if(lives<=0){sfx(110,.5,'sawtooth',.06,50);finish('FLOW BROKE · START SMALLER');return}
-            }
+            o.pass=true;chain=0;shakeT=16;flashA=.6;
+            for(let i=0;i<10;i++)parts.push({x:hb.x+7,y:hb.y+8,vx:(Math.random()-.5)*4,vy:(Math.random()-.6)*4,life:20,size:2});
+            sfx(110,.5,'sawtooth',.06,50);
+            finish('FLOW BROKE · ONE HIT');return;
           }
         }
         for(const p of packs){
@@ -639,6 +637,7 @@ GAMES.autoFlow.build=function(host,done){
       for(const po of pops){po.y-=0.6;po.life--}
       for(let i=pops.length-1;i>=0;i--)if(pops[i].life<=0)pops.splice(i,1);
     }
+    gameState.af={phase,dead,onGround,speed,px:player.x,pw:player.w,obs:obstacles.map(o=>({x:o.x,w:o.w,h:o.h})),dist};
     draw(now);
     if(!dead)gameState.raf=requestAnimationFrame(frame);
   }
@@ -692,34 +691,20 @@ GAMES.autoFlow.build=function(host,done){
   }
   function drawPlayer(now){
     const px=player.x;
-    const py=GROUND-22-player.y+(phase==='count'?Math.sin(now/300)*1.2:0);
-    if(invuln>0&&Math.floor(now/80)%2===0)return;
-    const legA=Math.floor(dist*0.35)%2===0;
+    const py=GROUND-16-player.y+(phase==='count'?Math.sin(now/300)*1.2:0);
     ctx.fillStyle='#fff';
-    ctx.fillRect(px+2,py+2,14,14);
+    ctx.fillRect(px,py,16,16);
     ctx.fillStyle='#000';
-    ctx.fillRect(px+2,py+2,14,4);
-    ctx.fillStyle='#fff';
-    ctx.fillRect(px+5,py+3,2,2);
-    ctx.fillRect(px+11,py+3,2,2);
-    ctx.fillRect(px+7,py+7,4,4);
-    ctx.fillStyle='#fff';
-    ctx.fillRect(px+8,py-3,2,3);
-    ctx.fillRect(px+7,py-5,4,2);
-    if(onGround){
-      ctx.fillRect(px+3+(legA?5:0),py+16,4,6);
-      ctx.fillRect(px+11-(legA?5:0),py+16,4,6);
-    }else{
-      ctx.fillRect(px+4,py+15,4,5);
-      ctx.fillRect(px+11,py+15,4,5);
-    }
+    ctx.fillRect(px+3,py+3,3,3);
+    ctx.fillRect(px+10,py+3,3,3);
+    ctx.fillRect(px+6,py+11,4,3);
     if(landT>0){
       ctx.fillStyle='rgba(255,255,255,.4)';
-      ctx.fillRect(px+2,py+18,14,2);
+      ctx.fillRect(px+1,py+17,14,2);
     }
-    ctx.fillStyle='rgba(255,255,255,.3)';
-    ctx.fillRect(px-8,py+6,4,3);
-    ctx.fillRect(px-14,py+10,4,3);
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    ctx.fillRect(px-5,py+5,3,3);
+    ctx.fillRect(px-9,py+9,3,3);
   }
   function draw(now){
     ctx.save();
@@ -796,15 +781,9 @@ GAMES.autoFlow.build=function(host,done){
   }
   onKey(e=>{
     const k=e.key;
-    if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();jumpHold.on=true;doJump()}
+    if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();doJump()}
   });
-  onKeyUp(e=>{
-    const k=e.key;
-    if(k===' '||k==='ArrowUp'||k.toLowerCase()==='w'){e.preventDefault();jumpHold.on=false}
-  });
-  c.addEventListener('pointerdown',e=>{e.preventDefault();jumpHold.on=true;doJump()});
-  c.addEventListener('pointerup',()=>{jumpHold.on=false});
-  c.addEventListener('pointerleave',()=>{jumpHold.on=false});
+  c.addEventListener('pointerdown',e=>{e.preventDefault();doJump()});
   gameState.raf=requestAnimationFrame(frame);
 };
 
