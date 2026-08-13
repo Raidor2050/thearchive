@@ -103,15 +103,15 @@ const quests = [
 ];
 
 const ACHIEVEMENTS={
-  leadSort:{name:'LEAD INVADERS',desc:'Played the lead sourcing drill.'},
-  emailBuild:{name:'EMAIL BUILD',desc:'Played the outreach drill.'},
-  partnerCall:{name:'PARTNER CALL',desc:'Played the contact drill.'},
-  onboardPack:{name:'ONBOARD PACK',desc:'Played the onboarding drill.'},
-  closeDeal:{name:'CLOSE THE DEAL',desc:'Played the closing drill.'},
-  autoFlow:{name:'AUTO FLOW',desc:'Played the automation drill.'},
-  allGames:{name:'COMPLETIONIST',desc:'Played all six mini drills.'},
-  saveScore:{name:'ON THE BOARD',desc:'Saved a score to a leaderboard.'},
-  patron:{name:'ARCHIVE PATRON',desc:'Pressed forward twelve times.'}
+  leadSort:{name:'LEAD INVADERS',desc:'Played the lead sourcing drill.',icon:'☄'},
+  emailBuild:{name:'EMAIL BUILD',desc:'Played the outreach drill.',icon:'✉'},
+  partnerCall:{name:'PARTNER CALL',desc:'Played the contact drill.',icon:'✕'},
+  onboardPack:{name:'BLACKJACK',desc:'Played the dealing drill.',icon:'♠'},
+  closeDeal:{name:'CLOSE THE DEAL',desc:'Played the closing drill.',icon:'◉'},
+  autoFlow:{name:'AUTO FLOW',desc:'Played the automation drill.',icon:'⟳'},
+  allGames:{name:'COMPLETIONIST',desc:'Played all six mini drills.',icon:'★'},
+  saveScore:{name:'ON THE BOARD',desc:'Saved a score to a leaderboard.',icon:'≡'},
+  patron:{name:'ARCHIVE PATRON',desc:'Pressed forward twelve times.',icon:'♛'}
 };
 
 const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,achievements:[],playerName:'',leaderboard:{},playedGames:[]};
@@ -159,9 +159,9 @@ function openAchievements(){
   const ach=state.achievements||[];
   const cards=Object.keys(ACHIEVEMENTS).map(id=>{
     const a=ACHIEVEMENTS[id],done=ach.includes(id);
-    return `<article class="ach${done?' done':''}"><div class="ach-mark">${done?'✓':'·'}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div></article>`;
+    return `<article class="ach${done?' done':''}"><div class="ach-mark">${a.icon}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div></article>`;
   }).join('');
-  openModal('ACHIEVEMENTS','The archive kept score.',`<div class="story-modal"><p class="story-lead">You stayed long enough for the archive to notice.</p><div class="ach-grid">${cards}</div><p class="story-small">${ach.length} / ${Object.keys(ACHIEVEMENTS).length} achievements · ${state.found.length} notes · ${state.xp} XP.</p><p class="story-small">The number is fake. The curiosity is not.</p></div>`);
+  openModal('ACHIEVEMENTS','The archive kept score.',`<div class="ach-modal"><p class="story-lead">You stayed long enough for the archive to notice.</p><div class="ach-grid">${cards}</div><p class="story-small">${ach.length} / ${Object.keys(ACHIEVEMENTS).length} achievements · ${state.found.length} notes · ${state.xp} XP.</p><p class="story-small">The number is fake. The curiosity is not.</p></div>`);
 }
 function openQuests(){openModal('QUESTS','The chapters completed so far.',`<div class="quest-story">${quests.map(([t,d,s],i)=>`<article class="quest ${s}"><div class="quest-meta">${s==='done'?'ACHIEVED':'PENDING'} · ${String(i+1).padStart(2,'0')}</div><div class="quest-title">${t}</div><div class="quest-copy">${d}</div></article>`).join('')}</div>`)}
 function openToolkit(){openModal('TOOLKIT','The equipment behind the work.',`<div class="tool-story">${tools.map(([n,d],i)=>`<article class="tool"><div class="tool-index">${String(i+1).padStart(2,'0')}</div><div><div class="tool-name">${n}</div><div class="tool-note">${d}</div></div></article>`).join('')}</div>`)}

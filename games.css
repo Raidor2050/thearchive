@@ -50,11 +50,11 @@
 .af-block.lit{background:#fff;color:#000}
 .af-block.ok{outline:3px solid #fff;outline-offset:2px}
 
-.op-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.op-tile{border:2px solid #fff;background:#000;color:#fff;padding:16px 10px;font-size:17px;cursor:pointer;min-height:64px}
-.op-tile:hover:not(:disabled){background:#fff;color:#000}
-.op-tile.done{background:#fff;color:#000;cursor:default}
-.op-tile.wrong{outline:3px solid #fff;outline-offset:2px;animation:gShake .18s steps(2,end)}
+.bj-side{display:flex;flex-direction:column;gap:6px;padding:12px;border:2px solid #444}
+.bj-label{font-size:14px;color:#888;letter-spacing:.08em}
+.bj-hand{display:flex;gap:8px;flex-wrap:wrap;min-height:70px}
+.bj-card{display:inline-flex;align-items:center;justify-content:center;border:2px solid #fff;background:#000;color:#fff;width:56px;height:70px;font-size:24px}
+.bj-value{font-size:16px;color:#ddd}
 
 .lb{display:grid;gap:8px}
 .lb-row{display:grid;grid-template-columns:44px 1fr auto;gap:10px;border:2px solid #fff;padding:10px 12px;font-size:18px;align-items:center}
@@ -76,7 +76,7 @@
   .game-title{font-size:19px}
   .ttt-cell{font-size:34px}
   .af-pad{grid-template-columns:repeat(2,1fr)}
-  .op-grid{grid-template-columns:1fr}
   .game-row{grid-template-columns:1fr}
   .game-row-actions{flex-direction:row}
+  .bj-card{width:46px;height:58px;font-size:20px}
 }

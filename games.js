@@ -30,9 +30,9 @@ const GAMES = {
     tips:['Automation removes the busywork.','Trigger. Filter. Act. Log.','Consistency beats improvisation.','Let the system carry the memory.','Build it once, run it forever.']
   },
   onboardPack: {
-    id:'onboardPack', title:'ONBOARD PACK', tag:'ONBOARDING',
-    desc:'Pack the partner handoff. Links, terms, assets, timing, owner. Skip the noise.',
-    tips:['Onboarding is not the finish line.','The handoff needs links, terms, assets and timing.','And a clear owner.','Pick what starts the work. Skip the rest.','Five items make the pack. Find them all.']
+    id:'onboardPack', title:'BLACKJACK', tag:'ONBOARDING',
+    desc:'You are the dealer. Read the table, hit or stand, take the house edge.',
+    tips:['Aces count as eleven or one.','Seventeen is the classic stand.','The player hits until seventeen.','Bust the player when you can.','The dealer plays last, not first.']
   }
 };
 
@@ -493,33 +493,91 @@ GAMES.autoFlow.build=function(host,done){
   startRound();
 };
 
-/* ---- 6. ONBOARD PACK ---- */
+/* ---- 6. BLACKJACK ---- */
 GAMES.onboardPack.build=function(host,done){
-  const PACK=['AFFILIATE LINK','TERMS SHEET','CREATIVE ASSETS','LAUNCH TIMING','POINT OF CONTACT'];
-  const NOISE=['PAYROLL REPORT','DESIGN MOCKUPS','OFFICE BUDGET','TRAVEL SCHEDULE','PASSWORD LIST'];
-  const items=shuffle(PACK.map(label=>({label,good:true})).concat(NOISE.map(label=>({label,good:false}))));
-  let found=0,score=0;
-  const countEl=el('div','game-stat','ITEMS · 0 / 5');
+  const SUITS=['♠','♥','♦','♣'];
+  function deck(){const d=[];for(const s of SUITS)for(const r of [2,3,4,5,6,7,8,9,10,'J','Q','K','A'])d.push({r,s});return shuffle(d)}
+  function val(hand){let t=0,a=0;for(const c of hand){if(c.r==='A'){a++;t+=11}else if(typeof c.r==='number')t+=c.r;else t+=10}while(t>21&&a>0){t-=10;a--}return t}
+  function isBJ(hand){return hand.length===2&&val(hand)===21}
+  function cardText(c){return c.r+c.s}
+  function draw(hand){hand.push(deckPile.pop())}
+  let deckPile=[],pHand=[],dHand=[],round=1,score=0,record=[0,0,0],busy=false,dealerTurn=false,roundOver=false;
+  const roundEl=el('div','game-stat','ROUND · 1 / 5');
   const scoreEl=el('div','game-stat','SCORE · 0');
-  const hud=el('div','game-hud');hud.appendChild(countEl);hud.appendChild(scoreEl);
-  const grid=el('div','op-grid');
-  host.appendChild(el('div','game-hint','PICK THE FIVE ITEMS A PARTNER NEEDS TO START WORK.'));
-  host.appendChild(hud);host.appendChild(grid);
-  items.forEach(it=>{
-    const b=el('button','op-tile',it.label);b.type='button';
-    b.onclick=()=>{
-      if(b.classList.contains('done'))return;
-      if(it.good){
-        b.classList.add('done');b.disabled=true;
-        found++;score+=100;
-        scoreEl.textContent='SCORE · '+score;
-        countEl.textContent='ITEMS · '+found+' / 5';
-        if(found===5)done(score);
-      }else{
-        score=Math.max(0,score-40);scoreEl.textContent='SCORE · '+score;
-        b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),240);
-      }
+  const recEl=el('div','game-stat','W · 0 / L · 0 / P · 0');
+  const hud=el('div','game-hud');hud.appendChild(roundEl);hud.appendChild(scoreEl);hud.appendChild(recEl);
+  const msg=el('div','game-stat','');
+  const pBox=el('div','bj-side');
+  const pCards=el('div','bj-hand');
+  const pVal=el('div','bj-value');
+  pBox.appendChild(el('div','bj-label','PLAYER'));pBox.appendChild(pCards);pBox.appendChild(pVal);
+  const dBox=el('div','bj-side');
+  const dCards=el('div','bj-hand');
+  const dVal=el('div','bj-value');
+  dBox.appendChild(el('div','bj-label','YOU · DEALER'));dBox.appendChild(dCards);dBox.appendChild(dVal);
+  const actions=el('div','game-actions');
+  host.appendChild(el('div','game-hint','YOU ARE THE DEALER · THE PLAYER HITS UNTIL 17 · THEN YOU HIT OR STAND'));
+  host.appendChild(hud);host.appendChild(msg);host.appendChild(pBox);host.appendChild(dBox);host.appendChild(actions);
+  function render(){
+    pCards.innerHTML=pHand.map(c=>'<span class="bj-card">'+cardText(c)+'</span>').join('');
+    dCards.innerHTML=dHand.map(c=>'<span class="bj-card">'+cardText(c)+'</span>').join('');
+    pVal.textContent='VALUE · '+val(pHand);
+    dVal.textContent='VALUE · '+val(dHand);
+  }
+  function updateHud(){roundEl.textContent='ROUND · '+round+' / 5';scoreEl.textContent='SCORE · '+score;recEl.textContent='W · '+record[0]+' / L · '+record[1]+' / P · '+record[2]}
+  function settle(winner){
+    roundOver=true;busy=true;dealerTurn=false;
+    if(winner==='dealer'){record[0]++;score+=150;msg.textContent='DEALER WINS THE HAND';sfx(880,.25,'square',.03,1320)}
+    else if(winner==='player'){record[1]++;msg.textContent='PLAYER TAKES THE HAND';sfx(140,.3,'sawtooth',.05,70)}
+    else{record[2]++;score+=50;msg.textContent='PUSH · NOBODY WINS';sfx(520,.15,'square',.03,520)}
+    updateHud();
+    const nxt=el('button','game-btn',round>=5?'FINISH':'NEXT HAND');nxt.type='button';
+    nxt.onclick=()=>{
+      if(round>=5){done(score);return}
+      round++;busy=false;dealerTurn=false;roundOver=false;msg.textContent='';
+      nxt.remove();
+      startRound();
     };
-    grid.appendChild(b);
-  });
+    actions.appendChild(nxt);
+  }
+  function buttons(){
+    actions.innerHTML='';
+    const h=el('button','game-btn','HIT');h.type='button';h.onclick=hit;actions.appendChild(h);
+    const s=el('button','game-btn','STAND');s.type='button';s.onclick=stand;actions.appendChild(s);
+  }
+  function playerTurn(){
+    const pv=val(pHand);
+    if(pv>21){settle('dealer');return}
+    if(pv>=17){
+      dealerTurn=true;
+      msg.textContent='DEALER TURN · HIT OR STAND';
+      buttons();
+      return;
+    }
+    busy=true;
+    setTimeout(()=>{if(gameState.open&&gameState.id==='onboardPack'){draw(pHand);render();sfx(300,.06,'triangle',.02,200);busy=false;playerTurn()}},450);
+  }
+  function hit(){
+    if(!dealerTurn||busy||roundOver)return;
+    draw(dHand);render();sfx(380,.06,'triangle',.02,260);
+    if(val(dHand)>21){dealerTurn=false;settle('player')}
+  }
+  function stand(){
+    if(!dealerTurn||busy||roundOver)return;
+    dealerTurn=false;
+    const dv=val(dHand),pv=val(pHand);
+    settle(dv>pv?'dealer':(dv<pv?'player':'push'));
+  }
+  function startRound(){
+    deckPile=deck();pHand=[];dHand=[];
+    draw(pHand);draw(dHand);draw(pHand);draw(dHand);
+    actions.innerHTML='';
+    render();updateHud();
+    if(isBJ(pHand)&&isBJ(dHand)){settle('push');return}
+    if(isBJ(dHand)){settle('dealer');return}
+    if(isBJ(pHand)){settle('player');return}
+    busy=false;msg.textContent='PLAYER TURN · THEY HIT UNTIL 17';
+    playerTurn();
+  }
+  startRound();
 };
