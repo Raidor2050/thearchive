@@ -1,11 +1,11 @@
-const GATE_LINES=[
-  'One story left — {T}. Then the last page opens.',
-  'Two stories left. {T} comes next.',
-  'Three stories remain. Up next: {T}.',
-  'Four stories remain. The next one is {T}.',
-  'Five stories left to live through. Next: {T}.',
-  'The archive keeps six stories hands-on. First up: {T}.'
-];
+const GATE_LINES={
+  leadSort:'It began with a long list of names. Raiyan sorted them by fit, so only the right few ever got a message.',
+  emailBuild:'Fit only counts when the email lands. Each one was written around a single reason to reply.',
+  partnerCall:'A reply turned into a conversation. Raiyan made every call a next step, never a pitch.',
+  onboardPack:'A yes is not the finish — it is the handoff. Raiyan packed onboarding so nothing fell between handshake and launch.',
+  closeDeal:'Every program still comes down to the close. He listened for the real agreement, then asked plainly.',
+  autoFlow:'The repeatable work stopped repeating. Raiyan taught the pipeline to run itself.'
+};
 const narrativeScenes = [
   {id:'intro1',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'You made it!',next:'intro2'},
   {id:'intro2',chapter:'ARCHIVE // OPEN',speaker:'* GUIDE',text:'Welcome.',next:'intro2b'},
@@ -88,7 +88,7 @@ const narrativeScenes = [
   {id:'craft3',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The tool is not the point.',next:'craft3b',secret:6},
   {id:'craft3b',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The right record at the right moment is.',next:'craft3c'},
   {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'storyGate'},
-  {id:'storyGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();if(r.length)return GATE_LINES[r.length-1].replace('{T}',GAMES[r[0]].title);return 'The whole story is told. One last page — and it is his own voice.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'storyGate':'truely1'}},
+  {id:'storyGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();if(r.length)return GATE_LINES[r[0]];return 'Every chapter has been lived through. One last page — and it is his own voice.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'storyGate':'truely1'}},
   {id:'truely1',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'One story shows how all of it runs.',next:'truely2'},
   {id:'truely2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'At Truely, the pipeline lived in Google Sheets.',next:'truely3'},
   {id:'truely3',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Leads, status and notes for the whole team.',next:'truely4'},
@@ -100,8 +100,8 @@ const narrativeScenes = [
   {id:'truely9',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'One workflow became company-wide automation.',next:'truely10'},
   {id:'truely10',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'The team kept judgment. Machines kept memory.',next:'truely11'},
   {id:'truely11',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the skill behind the numbers.',next:'finalContact'},
-  {id:'finalContact',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the shape of it.',next:'finalContact2'},
-  {id:'finalContact2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Ready to contact Raiyan?',choices:[{label:'YES — OPEN A CHANNEL',next:'contact'},{label:'NO — I WILL KEEP EXPLORING',next:'hub'}]},
+  {id:'finalContact',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Research, outreach, calls, handoffs, closes.',next:'finalContact2'},
+  {id:'finalContact2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'The last step is a conversation with Raiyan himself.',choices:[{label:'YES — OPEN A CHANNEL',next:'contact'},{label:'NO — I WILL KEEP EXPLORING',next:'hub'}]},
   {id:'profileHint',chapter:'ARCHIVE NOTE // 01',speaker:'* GUIDE',text:'The profile holds the professional record.',next:'profileHint2',secret:8},
   {id:'profileHint2',chapter:'ARCHIVE NOTE // 01',speaker:'* GUIDE',text:'This story is the reasoning behind it.',next:'hub'},
   {id:'toolHint',chapter:'ARCHIVE NOTE // 02',speaker:'* GUIDE',text:'The toolkit is practical.',next:'toolHint2',secret:9},
