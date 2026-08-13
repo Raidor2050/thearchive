@@ -80,7 +80,18 @@ const narrativeScenes = [
   {id:'craft3',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The tool is not the point.',next:'craft3b',secret:6},
   {id:'craft3b',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'The right record at the right moment is.',next:'craft3c'},
   {id:'craft3c',chapter:'SYSTEMS // 03',speaker:'* GUIDE',text:'Partners get useful follow-through, not noise.',next:'drillGate'},
-  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'drillGate':'finalContact'}},
+  {id:'drillGate',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:function(){const r=remainingGames();return r.length?('Before the last page — '+r.length+' drill'+(r.length>1?'s':'')+' remain'+(r.length>1?'':'s')+'. Next up: '+GAMES[r[0]].title+'.'):'All six drills are done. Ready for the last page.'},game:function(){const r=remainingGames();return r.length?r[0]:null},next:function(){return remainingGames().length?'drillGate':'truely1'}},
+  {id:'truely1',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'One story shows how all of it runs.',next:'truely2'},
+  {id:'truely2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'At Truely, the pipeline lived in Google Sheets.',next:'truely3'},
+  {id:'truely3',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Leads, status and notes for the whole team.',next:'truely4'},
+  {id:'truely4',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Edits were manual. Tabs multiplied. Time leaked.',next:'truely5'},
+  {id:'truely5',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Raiyan taught the sheets to run themselves.',next:'truely6'},
+  {id:'truely6',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'He wired n8n to move data between them.',next:'truely7'},
+  {id:'truely7',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'New leads filed themselves. Status updated itself.',next:'truely8'},
+  {id:'truely8',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Follow-ups queued. Reports built themselves.',next:'truely9'},
+  {id:'truely9',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'One workflow became company-wide automation.',next:'truely10'},
+  {id:'truely10',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'The team kept judgment. Machines kept memory.',next:'truely11'},
+  {id:'truely11',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the skill behind the numbers.',next:'finalContact'},
   {id:'finalContact',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'That is the shape of it.',next:'finalContact2'},
   {id:'finalContact2',chapter:'ARCHIVE // LAST PAGE',speaker:'* GUIDE',text:'Ready to contact Raiyan?',choices:[{label:'YES — OPEN A CHANNEL',next:'contact'},{label:'NO — I WILL KEEP EXPLORING',next:'hub'}]},
   {id:'profileHint',chapter:'ARCHIVE NOTE // 01',speaker:'* GUIDE',text:'The profile holds the professional record.',next:'profileHint2',secret:8},
@@ -90,7 +101,7 @@ const narrativeScenes = [
 ];
 
 const tools = [
- ['Impact','Affiliate tracking and partner operations'],['ShareASale','Affiliate network management'],['Rakuten','Affiliate partner ecosystem'],['CJ','Affiliate program operations'],['Awin','Affiliate network management'],['PartnerStack','SaaS partnerships'],['FirstPromoter','Direct affiliate operations'],['HubSpot','CRM and pipeline management'],['Google Analytics','Performance analysis'],['Ahrefs','Research and publisher discovery'],['Google Sheets','Lead databases and reporting'],['Google Workspace','Research, docs and collaboration']
+ ['Impact','Affiliate tracking and partner operations'],['ShareASale','Affiliate network management'],['Rakuten','Affiliate partner ecosystem'],['CJ','Affiliate program operations'],['Awin','Affiliate network management'],['PartnerStack','SaaS partnerships'],['FirstPromoter','Direct affiliate operations'],['HubSpot','CRM and pipeline management'],['Google Analytics','Performance analysis'],['Ahrefs','Research and publisher discovery'], ['Google Sheets','Lead databases and reporting'],['Google Workspace','Research, docs and collaboration'],['n8n','Workflow automation between tools']
 ];
 const quests = [
  ['PARTNER RESEARCH','Built practical research habits for finding publishers and creators with genuine audience fit.','done'],
@@ -98,6 +109,7 @@ const quests = [
  ['PROGRAM OPERATIONS','Supported affiliate programs with partner communication, reporting and campaign improvement.','done'],
  ['TEAM ENABLEMENT','Helped lead roughly five affiliate managers for about 1.5 years through clear workflows and handoffs.','done'],
  ['CREATOR LOGISTICS','Supported creator partnership operations, including 80+ product shipments across the US and Canada.','done'],
+ ['WORKFLOW AUTOMATION','Built Google Sheets and n8n automations that started company-wide automation at Truely.','done'],
  ['ECHOLABS','Publish EchoLabs as a platform.','todo'],
  ['THE BACKFLIP','Do a backflip.','todo']
 ];
@@ -136,7 +148,7 @@ function renderChoices(){ui.choices.innerHTML='';current().choices.forEach((c,i)
 function renderScene(){clearInterval(state.timer);state.typing=true;state.charIndex=0;const s=current();ui.chapter.textContent=s.chapter;ui.speaker.textContent=s.speaker;ui.sceneMark.textContent=`[${String(state.index+1).padStart(2,'0')}]`;ui.text.textContent='';ui.choices.innerHTML='';ui.card.classList.remove('ready','has-choices');const chars=[...textFor(s)];state.timer=setInterval(()=>{state.charIndex++;ui.text.textContent=chars.slice(0,state.charIndex).join('');if(state.charIndex>=chars.length)finishTyping()},state.speed)}
 function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(gid,s.id)},250)}else if(s.choices){autoSeq=0}else{autoSeq++;if(s.next&&autoSeq>=4){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;if(!state.typing)next()},1600)}}save()}
 function choose(i,next){state.choices.push({scene:current().id,choice:i});choiceSound();if(next==='contact'){openContact();save();return}goto(next)}
-function goto(id){const idx=narrativeScenes.findIndex(s=>s.id===id);if(idx<0)return;state.history.push(state.index);state.index=idx;advanceSound();renderScene();save()}
+function goto(id){const idx=narrativeScenes.findIndex(s=>s.id===id);if(idx<0)return;if(id!==current().id)state.history.push(state.index);state.index=idx;advanceSound();renderScene();save()}
 function unlockAchievement(id){
   if(!ACHIEVEMENTS[id])return;
   if(!state.achievements)state.achievements=[];
@@ -150,7 +162,7 @@ function unlockAchievement(id){
   choiceSound();
 }
 function unlockAchievements(){unlockAchievement('patron')}
-function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;const t=typeof s.next==='function'?s.next():s.next;if(t)goto(t);else toast('END OF FILE')}
+function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;const t=typeof s.next==='function'?s.next():s.next;if(gid&&!state.playedGames.includes(gid)&&t!==s.id){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;if(t)goto(t);else toast('END OF FILE')}
 function back(){if(state.typing){finishTyping();return}const prev=state.history.pop();if(prev===undefined)return;autoSeq=0;state.index=prev;advanceSound();renderScene();save()}
 function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.achievements=[];state.playedGames=[];autoSeq=0;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
 function openModal(kicker,sub,html){closeNav();ui.modalKicker.textContent=kicker;ui.modalSub.textContent=sub;ui.modalContent.innerHTML=html;ui.modal.classList.remove('hidden');document.body.classList.add('modal-open');requestAnimationFrame(()=>ui.modalCard.focus())}

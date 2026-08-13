@@ -310,43 +310,66 @@ const EMAILS=[
     'Hi Lena, your workout tips are solid.',
     'Our app is a natural fit for your audience.',
     'Open to a quick call to explore it?',
+    'Thanks, Raiyan']},
+  {profile:'HEALTH PODCAST · 55K · US',parts:[
+    'SUBJECT: A sponsor fit for your wellness episode',
+    'Hi Dana, your episode on sleep stood out.',
+    'Our brand fits your listeners without interrupting them.',
+    'Interested in a short brief?',
+    'Best, Raiyan']},
+  {profile:'TRAVEL CREATOR · 120K · UK',parts:[
+    'SUBJECT: Travel eSIM collab for your audience',
+    'Hey Josh, your Japan series was unreal.',
+    'We cover the exact travel pain point you teach.',
+    'Open to testing the product this month?',
     'Thanks, Raiyan']}
 ];
 GAMES.emailBuild.build=function(host,done){
-  let ei=0,score=0,combo=0,roundStart=0;
+  let ei=0,score=0,combo=0,lives=3,roundStart=0,finished=false;
   const profileEl=el('div','eb-profile','');
   const slotEl=el('div','eb-slots');
   const chipsEl=el('div','eb-chips');
   const scoreEl=el('div','game-stat','SCORE · 0');
-  const hud=el('div','game-hud');hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','Click the email parts in the right order.'));
-  host.appendChild(hud);host.appendChild(profileEl);host.appendChild(slotEl);host.appendChild(chipsEl);
+  const livesEl=el('div','game-stat','LIVES · 3');
+  const comboEl=el('div','game-stat','COMBO · x0');
+  const msgEl=el('div','game-msg','');
+  const hud=el('div','game-hud');hud.appendChild(livesEl);hud.appendChild(comboEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','CLICK THE EMAIL PARTS IN THE RIGHT ORDER · 3 LIVES · MISSES COST ONE'));
+  host.appendChild(hud);host.appendChild(profileEl);host.appendChild(msgEl);host.appendChild(slotEl);host.appendChild(chipsEl);
+  function grade(){return score>=12000?'GRADE S · OUTREACH THAT EARNS A REPLY':score>=8000?'GRADE A · CLEAR AND RELEVANT':score>=4000?'GRADE B · IT WILL WORK':'GRADE C · TIGHTEN THE FIT'}
   function startRound(){
-    if(ei>=EMAILS.length){done(score);return}
+    if(finished)return;
+    if(ei>=EMAILS.length){finished=true;msgEl.textContent=grade();setTimeout(()=>{if(gameState.open&&gameState.id==='emailBuild')done(score)},1200);return}
     roundStart=performance.now();
     const e=EMAILS[ei];
     profileEl.textContent='PROSPECT · '+e.profile;
-    slotEl.innerHTML='';chipsEl.innerHTML='';
+    slotEl.innerHTML='';chipsEl.innerHTML='';msgEl.textContent='';
     const slots=e.parts.map((p,idx)=>{const s=el('div','eb-slot');slotEl.appendChild(s);return s});
     let next=0;
     shuffle(e.parts).forEach(p=>{
       const c=el('button','eb-chip',p);c.type='button';
       c.onclick=()=>{
+        if(finished)return;
         const idx=e.parts.indexOf(c.textContent);
         if(idx===next){
           slots[idx].textContent=c.textContent;slots[idx].classList.add('filled');
           c.classList.add('used');c.disabled=true;
-          combo++;score+=100+25*combo;
-          scoreEl.textContent='SCORE · '+score;
+          combo++;score+=100+25*combo;scoreEl.textContent='SCORE · '+score;
+          comboEl.textContent='COMBO · x'+combo;msgEl.textContent='';
           next++;
           if(next===e.parts.length){
             const bonus=Math.max(0,Math.round(2500-(performance.now()-roundStart)));
             score+=bonus;scoreEl.textContent='SCORE · '+score;
-            combo=0;ei++;setTimeout(startRound,500);
+            combo=0;comboEl.textContent='COMBO · x0';
+            ei++;setTimeout(startRound,500);
           }
         }else{
-          combo=0;score=Math.max(0,score-30);scoreEl.textContent='SCORE · '+score;
+          combo=0;comboEl.textContent='COMBO · x0';
+          score=Math.max(0,score-30);scoreEl.textContent='SCORE · '+score;
+          lives--;livesEl.textContent='LIVES · '+Math.max(0,lives);
           c.classList.add('wrong');setTimeout(()=>c.classList.remove('wrong'),240);
+          msgEl.textContent='WRONG PART · THE NEXT PIECE IS: '+e.parts[next];
+          if(lives<=0){finished=true;msgEl.textContent='OUT OF LIVES · OUTREACH NEEDS CARE';setTimeout(()=>{if(gameState.open&&gameState.id==='emailBuild')done(score)},900)}
         }
       };
       chipsEl.appendChild(c);
@@ -432,15 +455,16 @@ GAMES.partnerCall.build=function(host,done){
 /* ---- 4. CLOSE THE DEAL ---- */
 GAMES.closeDeal.build=function(host,done){
   const W=420,C=210;
-  let deals=0,score=0,zone=70,speed=4.2,pos=0,dir=1,fired=false;
+  let deals=0,score=0,zone=70,speed=4.2,pos=0,dir=1,fired=false,streak=0;
   const track=el('div','cd-track');
   const zoneEl=el('div','cd-zone');
   const marker=el('div','cd-marker');
   track.appendChild(zoneEl);track.appendChild(marker);
   const dealEl=el('div','game-stat','DEAL · 1 / 5');
   const scoreEl=el('div','game-stat','SCORE · 0');
-  const hud=el('div','game-hud');hud.appendChild(dealEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','PRESS SPACE OR CLICK THE TRACK WHEN THE MARKER IS IN THE ZONE.'));
+  const streakEl=el('div','game-stat','STREAK · x0');
+  const hud=el('div','game-hud');hud.appendChild(dealEl);hud.appendChild(streakEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','PRESS SPACE OR CLICK THE TRACK WHEN THE MARKER IS IN THE ZONE · STREAKS MULTIPLY'));
   host.appendChild(hud);host.appendChild(track);
   resize();
   function resize(){zoneEl.style.left=(C-zone)+'px';zoneEl.style.width=(zone*2)+'px'}
@@ -459,11 +483,22 @@ GAMES.closeDeal.build=function(host,done){
     if(fired||deals>=5)return;
     fired=true;
     const dist=Math.abs(pos-C);
-    const pts=dist<=zone?Math.round((1-dist/zone)*1000):0;
-    score+=pts;scoreEl.textContent='SCORE · '+score;
-    const flash=el('div','cd-flash',pts?('+'+pts):'MISS');
+    let pts=0,mult=1,label='MISS';
+    if(dist<=zone){
+      streak++;
+      mult=1+0.25*(streak-1);
+      pts=Math.round((1-dist/zone)*1000*mult);
+      score+=pts;
+      streakEl.textContent='STREAK · x'+streak;
+      label=dist<=zone*0.3?'PERFECT +':'GOOD +';
+    }else{
+      streak=0;
+      streakEl.textContent='STREAK · x0';
+    }
+    scoreEl.textContent='SCORE · '+score;
+    const flash=el('div','cd-flash',label+(pts?(' '+pts):''));
     track.appendChild(flash);
-    setTimeout(()=>{flash.remove();deals++;if(deals<5){zone=Math.max(30,zone-10);speed+=0.9;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 5';fired=false}else done(score)},800);
+    setTimeout(()=>{flash.remove();deals++;if(deals<5){zone=Math.max(30,zone-10);speed+=0.9;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 5';fired=false}else if(gameState.open&&gameState.id==='closeDeal')done(score)},800);
   }
   track.addEventListener('click',fire);
   onKey(e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();fire()}});
@@ -475,26 +510,32 @@ GAMES.autoFlow.build=function(host,done){
   const pad=el('div','af-pad');
   const roundEl=el('div','game-stat','ROUND · 1');
   const scoreEl=el('div','game-stat','SCORE · 0');
-  const hud=el('div','game-hud');hud.appendChild(roundEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','WATCH THE SEQUENCE, THEN REPEAT IT BY CLICKING THE BLOCKS.'));
-  host.appendChild(hud);host.appendChild(pad);
+  const livesEl=el('div','game-stat','LIVES · 3');
+  const msgEl=el('div','game-msg','WATCH, THEN REPEAT.');
+  const hud=el('div','game-hud');hud.appendChild(roundEl);hud.appendChild(livesEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','WATCH THE SEQUENCE, THEN REPEAT IT BY CLICKING THE BLOCKS · 3 LIVES'));
+  host.appendChild(hud);host.appendChild(msgEl);host.appendChild(pad);
   const btns=AUTO_BLOCKS.map(b=>{const x=el('button','af-block',b);x.type='button';pad.appendChild(x);return x});
-  let seq=[],step=0,score=0,locked=true;
-  function startRound(){
-    seq.push(pick(AUTO_BLOCKS));
-    if(seq.length>6){done(score);return}
-    roundEl.textContent='ROUND · '+seq.length;
-    locked=true;step=0;
+  let seq=[],step=0,score=0,lives=3,locked=true,over=false;
+  function replay(){
+    step=0;locked=true;msgEl.textContent='WATCH…';
     let d=0;
     seq.forEach(b=>{
       setTimeout(()=>{const bi=AUTO_BLOCKS.indexOf(b);btns[bi].classList.add('lit');setTimeout(()=>btns[bi].classList.remove('lit'),480)},d);
       d+=700;
     });
-    setTimeout(()=>{locked=false},d+250);
+    setTimeout(()=>{locked=false;msgEl.textContent='YOUR TURN · '+seq.length+' BLOCK'+(seq.length>1?'S':'')},d+250);
+  }
+  function startRound(){
+    if(over)return;
+    seq.push(pick(AUTO_BLOCKS));
+    if(seq.length>6){over=true;msgEl.textContent='PIPELINE AUTOMATED';setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900);return}
+    roundEl.textContent='ROUND · '+seq.length;
+    replay();
   }
   btns.forEach((btn,bi)=>{
     btn.onclick=()=>{
-      if(locked)return;
+      if(locked||over)return;
       if(AUTO_BLOCKS[bi]===seq[step]){
         btn.classList.add('ok');setTimeout(()=>btn.classList.remove('ok'),200);
         step++;
@@ -503,7 +544,9 @@ GAMES.autoFlow.build=function(host,done){
           setTimeout(startRound,500);
         }
       }else{
-        done(score);
+        lives--;livesEl.textContent='LIVES · '+Math.max(0,lives);
+        if(lives<=0){over=true;msgEl.textContent='FLOW BROKE · START SMALLER';setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900)}
+        else replay();
       }
     };
   });
