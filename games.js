@@ -108,22 +108,30 @@ function showResults(score){
     return;
   }
   body.appendChild(el('div','game-score','SCORE · '+score));
+  let entryTs=null;
+  const b=getBoard(gameState.id);
+  const entry={name:(state.playerName||'PLAYER').slice(0,14),score,ts:Date.now()};
+  entryTs=entry.ts;
+  b.push(entry);
+  b.sort((x,y)=>y.score-x.score);
+  state.leaderboard[gameState.id]=b.slice(0,20);
+  save();
   const wrap=el('div','game-save');
   const input=el('input','game-name');
   input.type='text';input.maxLength=14;input.placeholder='ENTER YOUR NAME';
   input.value=state.playerName||'';
   const saveBtn=el('button','game-btn','SAVE SCORE');saveBtn.type='button';
-  const lbBtn=el('button','game-btn hidden','VIEW LEADERBOARD');lbBtn.type='button';
-  const msg=el('div','game-msg','');
+  const lbBtn=el('button','game-btn','VIEW LEADERBOARD');lbBtn.type='button';
+  const msg=el('div','game-msg','AUTO-SAVED TO LEADERBOARD');
   const doneBtn=el('button','game-btn','DONE');doneBtn.type='button';doneBtn.onclick=closeGamePanel;
   const retryBtn=el('button','game-btn','RETRY');retryBtn.type='button';retryBtn.onclick=retryGame;
   function saveScore(){
     const name=(input.value.trim()||'PLAYER').slice(0,14);
     state.playerName=name;
     const b=getBoard(gameState.id);
-    b.push({name,score,ts:Date.now()});
-    b.sort((x,y)=>y.score-x.score);
-    state.leaderboard[gameState.id]=b.slice(0,10);
+    const e=b.find(x=>x.ts===entryTs);
+    if(e)e.name=name;
+    else{b.push({name,score,ts:Date.now()});b.sort((x,y)=>y.score-x.score);state.leaderboard[gameState.id]=b.slice(0,20)}
     save();
     msg.textContent='SCORE SAVED TO LEADERBOARD';
     unlockAchievement('saveScore');
@@ -150,7 +158,7 @@ function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const pane
 
 function openLeaderboard(id){
   const g=GAMES[id];if(!g)return;
-  const b=getBoard(id);
+  const b=getBoard(id).slice(0,10);
   const rows=b.length?`<div class="lb">${b.map((e,i)=>`<div class="lb-row"><span class="lb-rank">${String(i+1).padStart(2,'0')}</span><span class="lb-name">${esc(e.name)}</span><span class="lb-score">${e.score}</span></div>`).join('')}</div>`:'<p class="story-small">No scores yet — the archive only keeps what you run.</p>';
   openModal('LEADERBOARD',g.title+' · TOP SCORES',rows);
 }
@@ -468,7 +476,7 @@ GAMES.closeDeal.build=function(host,done){
   const zoneEl=el('div','cd-zone');
   const marker=el('div','cd-marker');
   track.appendChild(zoneEl);track.appendChild(marker);
-  const dealEl=el('div','game-stat','DEAL · 1 / 5');
+  const dealEl=el('div','game-stat','DEAL · 1 / 9');
   const scoreEl=el('div','game-stat','SCORE · 0');
   const streakEl=el('div','game-stat','STREAK · x0');
   const hud=el('div','game-hud');hud.appendChild(dealEl);hud.appendChild(streakEl);hud.appendChild(scoreEl);
@@ -478,7 +486,7 @@ GAMES.closeDeal.build=function(host,done){
   const MW=marker.clientWidth||8;
   const B=2;
   const C=W/2;
-  let deals=0,score=0,zone=70,speed=4.2,pos=0,dir=1,fired=false,streak=0;
+  let deals=0,score=0,zone=70,speed=3.6,pos=0,dir=1,fired=false,streak=0;
   resize();
   function resize(){zoneEl.style.left=(C-zone-B)+'px';zoneEl.style.width=(zone*2+B*2)+'px'}
   let last=performance.now();
@@ -494,7 +502,7 @@ GAMES.closeDeal.build=function(host,done){
   }
   gameState.raf=requestAnimationFrame(frame);
   function fire(){
-    if(fired||deals>=5)return;
+    if(fired||deals>=9)return;
     fired=true;
     const dist=Math.abs((pos+MW/2)-C);
     let pts=0,mult=1,label='MISS';
@@ -513,7 +521,7 @@ GAMES.closeDeal.build=function(host,done){
     scoreEl.textContent='SCORE · '+score;
     const flash=el('div','cd-flash',label+(pts?(' '+pts):''));
     track.appendChild(flash);
-    setTimeout(()=>{flash.remove();zoneEl.classList.remove('hit');deals++;if(deals<5){zone=Math.max(30,zone-10);speed+=0.9;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 5';fired=false}else if(gameState.open&&gameState.id==='closeDeal')done(score)},800);
+    setTimeout(()=>{flash.remove();zoneEl.classList.remove('hit');deals++;if(deals<9){zone=Math.max(30,zone-10);speed+=0.6;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 9';fired=false}else if(gameState.open&&gameState.id==='closeDeal')done(score)},800);
   }
   track.addEventListener('click',fire);
   onKey(e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();fire()}});
@@ -521,13 +529,13 @@ GAMES.closeDeal.build=function(host,done){
 
 /* ---- 5. AUTO FLOW (Geometry-Dash-style runner) ---- */
 GAMES.autoFlow.build=function(host,done){
-  const W=620,H=300,GROUND=H-46,GOAL=1500;
+  const W=620,H=300,GROUND=H-46,GOAL=3000;
   const c=el('canvas','li-canvas af-canvas');c.width=W;c.height=H;
   const ctx=c.getContext('2d');
   const best=getBoard('autoFlow')[0]?getBoard('autoFlow')[0].score:0;
   let score=0,dist=0,leads=0,speed=4.3,jumpV=0,onGround=true,dead=false;
   let phase='count',count=3,countT=44,last=performance.now(),nextSpawn=340,chain=0;
-  let shakeT=0,flashA=0,landT=0,bannerT=0,banner='',milestone=375,impactT=0;
+  let shakeT=0,flashA=0,landT=0,bannerT=0,banner='',milestone=750,impactT=0;
   const scoreEl=el('div','game-stat','SCORE · 0');
   const leadEl=el('div','game-stat','LEADS · 0');
   const distEl=el('div','game-stat','METERS · 0');
@@ -598,7 +606,7 @@ GAMES.autoFlow.build=function(host,done){
     dead=false;phase='run';
     score=0;dist=0;leads=0;speed=4.3;jumpV=0;onGround=true;
     obstacles.length=0;packs.length=0;parts.length=0;pops.length=0;
-    nextSpawn=340;chain=0;milestone=375;shakeT=0;flashA=0;landT=0;bannerT=0;impactT=0;
+    nextSpawn=340;chain=0;milestone=750;shakeT=0;flashA=0;landT=0;bannerT=0;impactT=0;
     scoreEl.textContent='SCORE · 0';leadEl.textContent='LEADS · 0';distEl.textContent='METERS · 0';
     last=performance.now();
   }
@@ -626,16 +634,16 @@ GAMES.autoFlow.build=function(host,done){
         countT-=dt;
         if(countT<=0){count--;countT=44;if(count<0){phase='run';banner='GO!';bannerT=50;sfx(660,.15,'square',.05,1320)}}
       }else{
-        speed=Math.min(11,4.3+dist/230);
+        speed=Math.min(11,4.3+dist/260);
         dist+=speed*(dt/16.6);
         distEl.textContent='METERS · '+Math.round(dist);
         score+=Math.round(speed);scoreEl.textContent='SCORE · '+score;
         if(dist>=nextSpawn){spawn();nextSpawn=dist+Math.round(66*speed)}
         if(dist>=GOAL){finish()}
         if(dist>=milestone){
-          const notes=['LEADS FILE THEMSELVES','STATUS UPDATES ITSELF','REPORTS BUILD THEMSELVES'];
-          banner=notes[Math.floor(milestone/375)-1]||'FLOW STABLE';
-          bannerT=70;milestone+=375;shakeT=10;sfx(440,.12,'square',.05,880);
+          const notes=['LEADS FILE THEMSELVES','STATUS UPDATES ITSELF','REPORTS BUILD THEMSELVES','ROUTES REROUTE THEMSELVES'];
+          banner=notes[Math.floor(milestone/750)-1]||'FLOW STABLE';
+          bannerT=70;milestone+=750;shakeT=10;sfx(440,.12,'square',.05,880);
         }
       }
       coyoteT=onGround?100:Math.max(0,coyoteT-dt);

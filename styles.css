@@ -100,6 +100,8 @@ body.modal-open{overflow:hidden}
 .lb-board-block{border:2px solid #fff;background:#000;padding:12px}
 .lb-board-title{font-size:20px;letter-spacing:.05em;margin-bottom:8px;border-bottom:1px solid #444;padding-bottom:6px}
 .lb-empty{margin:0;font-size:15px;color:#888;padding:8px 2px}
+.lb-float{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:25;border:2px solid #fff;background:#000;color:#fff;padding:16px 8px;font-size:13px;letter-spacing:.22em;writing-mode:vertical-rl;text-transform:uppercase;cursor:pointer;font-family:inherit;box-shadow:4px 4px 0 #fff;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.lb-float:hover{background:#fff;color:#000}
 .dialogue-card{box-shadow:10px 10px 0 #fff}
 .dialogue-body{grid-template-columns:96px 1fr}
 .guide-portrait{width:86px;height:96px;display:grid;place-items:center;overflow:hidden}
