@@ -26,13 +26,13 @@ const GAMES = {
   },
   autoFlow: {
     id:'autoFlow', title:'AUTO FLOW', tag:'AUTOMATION',
-    desc:'Run the pipeline. Tap to jump the manual dead ends, catch the lead packets, reach the fully automated run.',
-    tips:['Tap to jump. Holding does nothing extra.','One hit breaks the flow. Time your taps.','Catch the lead packets. Cores are worth more.','Jump the manual tabs. Dodge the stale mail.','Speed builds with every meter. The pipeline runs itself.']
+    desc:'Run the pipeline. Tap to jump the dead ends, ride the arc to catch the lead line, beat your best. One hit breaks the flow — tap again to retry instantly.',
+    tips:['Tap to jump. Holding does nothing extra.','The lead line rides the same arc that clears each obstacle.','Cores are worth 250 — they sit at the end of the line.','One hit ends the run. Tap again to restart on the spot.','Speed builds every meter. Your best is the real boss.']
   },
   onboardPack: {
     id:'onboardPack', title:'BLACKJACK', tag:'ONBOARDING',
-    desc:'You are the dealer. Read the table, hit or stand, take the house edge.',
-    tips:['Aces count as eleven or one.','Seventeen is the classic stand.','The player hits until seventeen.','Bust the player when you can.','The dealer plays last, not first.']
+    desc:'Play the hand. Hit or stand against the dealer — get to 21 without busting.',
+    tips:['Aces count as eleven or one.','Hit below 17, stand at 17 or higher.','The dealer draws until 17.','Bust and the hand is gone.','Blackjack on two cards wins outright.']
   }
 };
 
@@ -464,8 +464,6 @@ GAMES.partnerCall.build=function(host,done){
 
 /* ---- 4. CLOSE THE DEAL ---- */
 GAMES.closeDeal.build=function(host,done){
-  const W=420,C=210;
-  let deals=0,score=0,zone=70,speed=4.2,pos=0,dir=1,fired=false,streak=0;
   const track=el('div','cd-track');
   const zoneEl=el('div','cd-zone');
   const marker=el('div','cd-marker');
@@ -476,14 +474,20 @@ GAMES.closeDeal.build=function(host,done){
   const hud=el('div','game-hud');hud.appendChild(dealEl);hud.appendChild(streakEl);hud.appendChild(scoreEl);
   host.appendChild(el('div','game-hint','PRESS SPACE OR CLICK THE TRACK WHEN THE MARKER IS IN THE ZONE · STREAKS MULTIPLY'));
   host.appendChild(hud);host.appendChild(track);
+  const W=track.clientWidth||420;
+  const MW=marker.clientWidth||8;
+  const B=2;
+  const C=W/2;
+  let deals=0,score=0,zone=70,speed=4.2,pos=0,dir=1,fired=false,streak=0;
   resize();
-  function resize(){zoneEl.style.left=(C-zone)+'px';zoneEl.style.width=(zone*2)+'px'}
+  function resize(){zoneEl.style.left=(C-zone-B)+'px';zoneEl.style.width=(zone*2+B*2)+'px'}
   let last=performance.now();
   function frame(now){
+    if(gameState.results)return;
     const dt=Math.min(50,now-last);last=now;
     if(!fired){
       pos+=dir*speed*(dt/16.6);
-      if(pos>=W){pos=W;dir=-1}if(pos<=0){pos=0;dir=1}
+      if(pos>=W-MW){pos=W-MW;dir=-1}if(pos<=0){pos=0;dir=1}
       marker.style.left=pos+'px';
     }
     gameState.raf=requestAnimationFrame(frame);
@@ -492,7 +496,7 @@ GAMES.closeDeal.build=function(host,done){
   function fire(){
     if(fired||deals>=5)return;
     fired=true;
-    const dist=Math.abs(pos-C);
+    const dist=Math.abs((pos+MW/2)-C);
     let pts=0,mult=1,label='MISS';
     if(dist<=zone){
       streak++;
@@ -500,6 +504,7 @@ GAMES.closeDeal.build=function(host,done){
       pts=Math.round((1-dist/zone)*1000*mult);
       score+=pts;
       streakEl.textContent='STREAK · x'+streak;
+      zoneEl.classList.add('hit');
       label=dist<=zone*0.3?'PERFECT +':'GOOD +';
     }else{
       streak=0;
@@ -508,7 +513,7 @@ GAMES.closeDeal.build=function(host,done){
     scoreEl.textContent='SCORE · '+score;
     const flash=el('div','cd-flash',label+(pts?(' '+pts):''));
     track.appendChild(flash);
-    setTimeout(()=>{flash.remove();deals++;if(deals<5){zone=Math.max(30,zone-10);speed+=0.9;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 5';fired=false}else if(gameState.open&&gameState.id==='closeDeal')done(score)},800);
+    setTimeout(()=>{flash.remove();zoneEl.classList.remove('hit');deals++;if(deals<5){zone=Math.max(30,zone-10);speed+=0.9;resize();dealEl.textContent='DEAL · '+(deals+1)+' / 5';fired=false}else if(gameState.open&&gameState.id==='closeDeal')done(score)},800);
   }
   track.addEventListener('click',fire);
   onKey(e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();fire()}});
@@ -519,14 +524,16 @@ GAMES.autoFlow.build=function(host,done){
   const W=620,H=300,GROUND=H-46,GOAL=1500;
   const c=el('canvas','li-canvas af-canvas');c.width=W;c.height=H;
   const ctx=c.getContext('2d');
+  const best=getBoard('autoFlow')[0]?getBoard('autoFlow')[0].score:0;
   let score=0,dist=0,leads=0,speed=4.3,jumpV=0,onGround=true,dead=false;
   let phase='count',count=3,countT=44,last=performance.now(),nextSpawn=340,chain=0;
-  let shakeT=0,flashA=0,landT=0,bannerT=0,banner='',milestone=375;
+  let shakeT=0,flashA=0,landT=0,bannerT=0,banner='',milestone=375,impactT=0;
   const scoreEl=el('div','game-stat','SCORE · 0');
   const leadEl=el('div','game-stat','LEADS · 0');
   const distEl=el('div','game-stat','METERS · 0');
-  const hud=el('div','game-hud');hud.appendChild(distEl);hud.appendChild(leadEl);hud.appendChild(scoreEl);
-  host.appendChild(el('div','game-hint','TAP SPACE / CLICK TO JUMP · ONE HIT ENDS THE RUN · CATCH THE LEAD PACKETS'));
+  const bestEl=el('div','game-stat','BEST · '+(best?best:'—'));
+  const hud=el('div','game-hud');hud.appendChild(distEl);hud.appendChild(leadEl);hud.appendChild(bestEl);hud.appendChild(scoreEl);
+  host.appendChild(el('div','game-hint','TAP SPACE / CLICK TO JUMP · ONE HIT ENDS THE RUN · TAP AGAIN TO RETRY ON THE SPOT'));
   host.appendChild(hud);host.appendChild(c);
   const pad=el('div','game-pad');
   const jumpBtn=el('button','game-pad-btn','JUMP ▲');jumpBtn.type='button';
@@ -541,16 +548,25 @@ GAMES.autoFlow.build=function(host,done){
   function spawn(){
     const r=Math.random();
     let type='mail';
-    if(r<0.28)type='node';
-    else if(r<0.6)type='tab';
+    if(r<0.22)type='node';
+    else if(r<0.55)type='tab';
     const h=type==='node'?44:(type==='tab'?30:18);
     const ox=W+40;
-    obstacles.push({type,x:ox,w:type==='node'?20:(type==='tab'?16:24),h,y:GROUND-h,pass:false,seed:Math.random()*6.28});
-    const n=type==='mail'?2:3;
-    const base=ox-120;
-    for(let i=0;i<n;i++){
-      const core=Math.random()<0.12;
-      packs.push({x:base+i*34,y:Math.max(50,GROUND-30-i*24-(core?58:0)),size:core?10:8,kind:core?'core':'packet',t:Math.random()*6.28,got:false});
+    obstacles.push({type,x:ox,w:type==='node'?20:(type==='tab'?16:24),h,y:GROUND-h,pass:false,minGap:1e9,seed:Math.random()*6.28});
+    if(type==='mail'&&speed>=7.8&&Math.random()<0.3)
+      obstacles.push({type:'mail',x:ox+52,w:24,h:18,y:GROUND-18,pass:false,minGap:1e9,seed:Math.random()*6.28});
+    placePacks(ox);
+  }
+  function placePacks(ox){
+    const tti=12;
+    const T=(ox-102)/speed;
+    const phases=[9,15,21];
+    const core=Math.random()<0.12;
+    for(let i=0;i<phases.length;i++){
+      const t=phases[i];
+      const yAt=9.5*t-0.33*t*t;
+      const isCore=core&&i===phases.length-1;
+      packs.push({x:86+speed*(T-tti+t),y:GROUND-16-yAt,size:isCore?10:8,kind:isCore?'core':'packet',t:Math.random()*6.28,got:false});
     }
   }
   function dust(x,y,n,spread){
@@ -558,21 +574,54 @@ GAMES.autoFlow.build=function(host,done){
   }
   function pop(x,y,text){pops.push({x,y,text,life:20})}
   function doJump(){
+    if(phase==='dead'){
+      if(impactT>0)return;
+      restartRun();
+      return;
+    }
     if(dead||phase!=='run')return;
     if(onGround||coyoteT>0){
       jumpV=9.5;onGround=false;coyoteT=0;bufferT=0;
       dust(player.x+8,GROUND,4,2.4);sfx(520,.1,'square',.03,820);
     }else{bufferT=120}
   }
-  function finish(msg){
-    if(dead)return;dead=true;
+  function die(){
+    if(dead)return;
+    dead=true;phase='dead';impactT=200;shakeT=16;flashA=.6;
+    const hb={x:player.x+1,y:GROUND-16-player.y,w:14,h:16};
+    for(let i=0;i<10;i++)parts.push({x:hb.x+7,y:hb.y+8,vx:(Math.random()-.5)*4,vy:(Math.random()-.6)*4,life:20,size:2});
+    for(let i=0;i<4;i++)parts.push({x:hb.x+3+Math.random()*10,y:hb.y+2+Math.random()*12,vx:(Math.random()-.5)*6,vy:-2-Math.random()*2,life:26,size:6});
+    sfx(110,.5,'sawtooth',.06,50);
+    sfx(55,.3,'triangle',.08,110);
+  }
+  function restartRun(){
+    dead=false;phase='run';
+    score=0;dist=0;leads=0;speed=4.3;jumpV=0;onGround=true;
+    obstacles.length=0;packs.length=0;parts.length=0;pops.length=0;
+    nextSpawn=340;chain=0;milestone=375;shakeT=0;flashA=0;landT=0;bannerT=0;impactT=0;
+    scoreEl.textContent='SCORE · 0';leadEl.textContent='LEADS · 0';distEl.textContent='METERS · 0';
+    last=performance.now();
+  }
+  function finish(){
+    if(dead)return;
+    dead=true;phase='done';
     stopLoop();
-    const m=el('div','game-msg',msg);host.appendChild(m);
+    host.appendChild(el('div','game-msg','PIPELINE AUTOMATED'));
+    if(score>best)host.appendChild(el('div','game-msg','NEW BEST · '+score));
     setTimeout(()=>{if(gameState.open&&gameState.id==='autoFlow')done(score)},900);
   }
   function frame(now){
     const dt=Math.min(50,now-last);last=now;
-    if(!dead){
+    if(window.__afDie&&!dead&&phase==='run'){window.__afDie=false;die()}
+    if(dead){
+      if(phase==='dead'){
+        impactT-=dt;
+        if(shakeT>0)shakeT--;
+        if(flashA>0)flashA=Math.max(0,flashA-.04);
+        for(const pa of parts){pa.x+=pa.vx;pa.y+=pa.vy;pa.life--;pa.vy+=0.3}
+        for(let i=parts.length-1;i>=0;i--)if(parts[i].life<=0)parts.splice(i,1);
+      }
+    }else{
       if(phase==='count'){
         countT-=dt;
         if(countT<=0){count--;countT=44;if(count<0){phase='run';banner='GO!';bannerT=50;sfx(660,.15,'square',.05,1320)}}
@@ -582,7 +631,7 @@ GAMES.autoFlow.build=function(host,done){
         distEl.textContent='METERS · '+Math.round(dist);
         score+=Math.round(speed);scoreEl.textContent='SCORE · '+score;
         if(dist>=nextSpawn){spawn();nextSpawn=dist+Math.round(66*speed)}
-        if(dist>=GOAL){finish('PIPELINE AUTOMATED');return}
+        if(dist>=GOAL){finish()}
         if(dist>=milestone){
           const notes=['LEADS FILE THEMSELVES','STATUS UPDATES ITSELF','REPORTS BUILD THEMSELVES'];
           banner=notes[Math.floor(milestone/375)-1]||'FLOW STABLE';
@@ -606,11 +655,15 @@ GAMES.autoFlow.build=function(host,done){
         for(let i=packs.length-1;i>=0;i--)if(packs[i].x<-30)packs.splice(i,1);
         const hb={x:player.x+1,y:GROUND-16-player.y,w:14,h:16};
         for(const o of obstacles){
-          if(!o.pass&&o.x+2<hb.x+hb.w&&o.x+o.w-2>hb.x&&GROUND-o.h+2<hb.y+hb.h&&hb.y<GROUND-2){
-            o.pass=true;chain=0;shakeT=16;flashA=.6;
-            for(let i=0;i<10;i++)parts.push({x:hb.x+7,y:hb.y+8,vx:(Math.random()-.5)*4,vy:(Math.random()-.6)*4,life:20,size:2});
-            sfx(110,.5,'sawtooth',.06,50);
-            finish('FLOW BROKE · ONE HIT');return;
+          if(o.pass)continue;
+          const overlap=o.x+2<hb.x+hb.w&&o.x+o.w-2>hb.x;
+          if(overlap){
+            if(GROUND-o.h+2<hb.y+hb.h&&hb.y<GROUND-2){chain=0;die();return}
+            const gap=player.y-o.h;
+            if(gap<o.minGap)o.minGap=gap;
+          }else if(o.x+o.w-2<=hb.x){
+            o.pass=true;
+            if(o.minGap>0&&o.minGap<=6){score+=15;pop(o.x+o.w/2,GROUND-16-player.y,'+15 NEAR MISS');scoreEl.textContent='SCORE · '+score;sfx(760,.06,'square',.03,1520)}
           }
         }
         for(const p of packs){
@@ -639,7 +692,7 @@ GAMES.autoFlow.build=function(host,done){
     }
     gameState.af={phase,dead,onGround,speed,px:player.x,pw:player.w,py:player.y,obs:obstacles.map(o=>({x:o.x,w:o.w,h:o.h})),dist};
     draw(now);
-    if(!dead)gameState.raf=requestAnimationFrame(frame);
+    if(phase!=='done')gameState.raf=requestAnimationFrame(frame);
   }
   function drawPack(p){
     const b=Math.sin(p.t)*1.2;
@@ -690,6 +743,7 @@ GAMES.autoFlow.build=function(host,done){
     }
   }
   function drawPlayer(now){
+    if(phase==='dead')return;
     const px=player.x;
     const py=GROUND-16-player.y+(phase==='count'?Math.sin(now/300)*1.2:0);
     ctx.fillStyle='#fff';
@@ -773,6 +827,17 @@ GAMES.autoFlow.build=function(host,done){
       ctx.fillText(banner,W/2,H/2-40);
       ctx.textAlign='left';
     }
+    if(phase==='dead'&&impactT<=0){
+      const blink=.55+.45*Math.sin(now/160);
+      ctx.fillStyle='rgba(255,255,255,'+blink+')';
+      ctx.font='22px monospace';
+      ctx.textAlign='center';
+      ctx.fillText('FLOW BROKE',W/2,H/2-44);
+      ctx.font='14px monospace';
+      ctx.fillText('TAP TO RETRY',W/2,H/2-12);
+      ctx.fillText(Math.round(dist)+' M',W/2,H/2+12);
+      ctx.textAlign='left';
+    }
     if(flashA>0){
       ctx.fillStyle='rgba(255,255,255,'+flashA+')';
       ctx.fillRect(0,0,W,H);
@@ -795,7 +860,7 @@ GAMES.onboardPack.build=function(host,done){
   function isBJ(hand){return hand.length===2&&val(hand)===21}
   function cardText(c){return c.r+c.s}
   function draw(hand){hand.push(deckPile.pop())}
-  let deckPile=[],pHand=[],dHand=[],round=1,score=0,record=[0,0,0],busy=false,dealerTurn=false,roundOver=false;
+  let deckPile=[],pHand=[],dHand=[],round=1,score=0,record=[0,0,0],busy=false,roundOver=false;
   const roundEl=el('div','game-stat','ROUND · 1 / 5');
   const scoreEl=el('div','game-stat','SCORE · 0');
   const recEl=el('div','game-stat','W · 0 / L · 0 / P · 0');
@@ -804,13 +869,13 @@ GAMES.onboardPack.build=function(host,done){
   const pBox=el('div','bj-side');
   const pCards=el('div','bj-hand');
   const pVal=el('div','bj-value');
-  pBox.appendChild(el('div','bj-label','PLAYER'));pBox.appendChild(pCards);pBox.appendChild(pVal);
+  pBox.appendChild(el('div','bj-label','YOU'));pBox.appendChild(pCards);pBox.appendChild(pVal);
   const dBox=el('div','bj-side');
   const dCards=el('div','bj-hand');
   const dVal=el('div','bj-value');
-  dBox.appendChild(el('div','bj-label','YOU · DEALER'));dBox.appendChild(dCards);dBox.appendChild(dVal);
+  dBox.appendChild(el('div','bj-label','DEALER'));dBox.appendChild(dCards);dBox.appendChild(dVal);
   const actions=el('div','game-actions');
-  host.appendChild(el('div','game-hint','YOU ARE THE DEALER · THE PLAYER HITS UNTIL 17 · THEN YOU HIT OR STAND'));
+  host.appendChild(el('div','game-hint','PLAY THE HAND · HIT OR STAND AGAINST THE DEALER · GET TO 21 WITHOUT BUSTING'));
   host.appendChild(hud);host.appendChild(msg);host.appendChild(pBox);host.appendChild(dBox);host.appendChild(actions);
   function render(){
     pCards.innerHTML=pHand.map(c=>'<span class="bj-card">'+cardText(c)+'</span>').join('');
@@ -820,58 +885,51 @@ GAMES.onboardPack.build=function(host,done){
   }
   function updateHud(){roundEl.textContent='ROUND · '+round+' / 5';scoreEl.textContent='SCORE · '+score;recEl.textContent='W · '+record[0]+' / L · '+record[1]+' / P · '+record[2]}
   function settle(winner){
-    roundOver=true;busy=true;dealerTurn=false;
-    if(winner==='dealer'){record[0]++;score+=150;msg.textContent='DEALER WINS THE HAND';sfx(880,.25,'square',.03,1320)}
-    else if(winner==='player'){record[1]++;msg.textContent='PLAYER TAKES THE HAND';sfx(140,.3,'sawtooth',.05,70)}
+    roundOver=true;busy=true;
+    if(winner==='player'){record[0]++;score+=150;msg.textContent='YOU TAKE THE HAND';sfx(140,.3,'sawtooth',.05,70)}
+    else if(winner==='dealer'){record[1]++;msg.textContent='DEALER WINS THE HAND';sfx(880,.25,'square',.03,1320)}
     else{record[2]++;score+=50;msg.textContent='PUSH · NOBODY WINS';sfx(520,.15,'square',.03,520)}
     updateHud();
+    actions.innerHTML='';
     const nxt=el('button','game-btn',round>=5?'FINISH':'NEXT HAND');nxt.type='button';
     nxt.onclick=()=>{
       if(round>=5){done(score);return}
-      round++;busy=false;dealerTurn=false;roundOver=false;msg.textContent='';
+      round++;busy=false;roundOver=false;msg.textContent='';
       nxt.remove();
       startRound();
     };
     actions.appendChild(nxt);
   }
-  function buttons(){
+  function playerButtons(){
     actions.innerHTML='';
     const h=el('button','game-btn','HIT');h.type='button';h.onclick=hit;actions.appendChild(h);
     const s=el('button','game-btn','STAND');s.type='button';s.onclick=stand;actions.appendChild(s);
   }
-  function playerTurn(){
-    const pv=val(pHand);
-    if(pv>21){settle('dealer');return}
-    if(pv>=17){
-      dealerTurn=true;
-      msg.textContent='DEALER TURN · HIT OR STAND';
-      buttons();
-      return;
-    }
-    busy=true;
-    setTimeout(()=>{if(gameState.open&&gameState.id==='onboardPack'){draw(pHand);render();sfx(300,.06,'triangle',.02,200);busy=false;playerTurn()}},450);
-  }
-  function hit(){
-    if(!dealerTurn||busy||roundOver)return;
-    draw(dHand);render();sfx(380,.06,'triangle',.02,260);
-    if(val(dHand)>21){dealerTurn=false;settle('player')}
-  }
-  function stand(){
-    if(!dealerTurn||busy||roundOver)return;
-    dealerTurn=false;
+  function dealerPlay(){
+    while(val(dHand)<17){draw(dHand);render();sfx(380,.06,'triangle',.02,260)}
     const dv=val(dHand),pv=val(pHand);
     settle(dv>pv?'dealer':(dv<pv?'player':'push'));
+  }
+  function hit(){
+    if(busy||roundOver)return;
+    draw(pHand);render();sfx(300,.06,'triangle',.02,200);
+    if(val(pHand)>21){settle('dealer');return}
+  }
+  function stand(){
+    if(busy||roundOver)return;
+    busy=true;
+    dealerPlay();
   }
   function startRound(){
     deckPile=deck();pHand=[];dHand=[];
     draw(pHand);draw(dHand);draw(pHand);draw(dHand);
     actions.innerHTML='';
     render();updateHud();
+    msg.textContent='YOUR TURN · HIT OR STAND';
     if(isBJ(pHand)&&isBJ(dHand)){settle('push');return}
-    if(isBJ(dHand)){settle('dealer');return}
     if(isBJ(pHand)){settle('player');return}
-    busy=false;msg.textContent='PLAYER TURN · THEY HIT UNTIL 17';
-    playerTurn();
+    if(isBJ(dHand)){settle('dealer');return}
+    playerButtons();
   }
   startRound();
 };
