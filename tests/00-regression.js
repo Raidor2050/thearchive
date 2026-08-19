@@ -1,0 +1,106 @@
+/* V1.1 regression — core behaviours must survive V1.2 untouched */
+module.exports=async function(h){
+  const {ok,section}=h;
+  const {window}=h.loadPage({});
+  const w=window,doc=w.document;
+
+  section('00a · boot');
+  ok(typeof w.__T.state==='object','state object exists');
+  ok(w.__T.narrativeScenes.length===99,'narrativeScenes intact ('+w.__T.narrativeScenes.length+')');
+  ok(w.__T.GAMES&&Object.keys(w.__T.GAMES).length===6,'six base games registered');
+  ok(w.__T.state.tier==='archive','tier defaults to archive');
+  ok(w.__T.state.signalUnlocked===false,'signalUnlocked starts false');
+  ok(doc.getElementById('tierBtn'),'tierBtn present in DOM');
+  ok(doc.getElementById('vaultRoot'),'vaultRoot present in DOM');
+
+  section('00b · dialogue flow');
+  w.start();
+  ok(w.__T.state.started,'start() sets started');
+  ok(doc.getElementById('startScreen').classList.contains('hidden'),'start screen hidden');
+  ok(doc.getElementById('experience').classList.contains('hidden')===false,'experience shown');
+  ok(w.__T.state.index===0,'starts at scene 0');
+  w.finishTyping();
+  ok(doc.getElementById('dialogueText').textContent==='You made it!','scene 0 text exact');
+  w.next();
+  ok(w.__T.state.index===1,'next() advances');
+  w.finishTyping();
+  w.back();
+  ok(w.__T.state.index===0,'back() returns');
+  w.goto('intro3d');
+  ok(w.current().id==='intro3d','goto works');
+  w.finishTyping();
+  w.choose(0,w.current().choices[0].next);
+  ok(w.__T.state.choices.length===1,'choose records choice');
+
+  section('00c · save/load roundtrip');
+  w.__T.state.playerName='TESTER';w.__T.state.speed=33;
+  w.save();
+  const raw=JSON.parse(w.localStorage.getItem(h.KEY));
+  ok(raw.playerName==='TESTER','save persists playerName');
+  ok(raw.timer===null,'timer excluded from save');
+  ok(raw.speed===33,'speed persisted');
+  w.__T.state.playerName='';w.__T.state.speed=18;w.load();
+  ok(w.__T.state.playerName==='TESTER','load restores playerName');
+  ok(w.__T.state.speed===33,'load restores speed');
+
+  section('00d · games room + results');
+  w.startGame('emailBuild');
+  ok(w.__T.gameState.open===true,'startGame opens panel');
+  ok(w.__T.gameState.id==='emailBuild','game id set');
+  ok(doc.querySelector('.eb-chips'),'emailBuild rendered');
+  w.skipGame();
+  ok(doc.querySelector('.game-score')&&doc.querySelector('.game-score').textContent==='SKIPPED','skip shows SKIPPED');
+  ok(w.__T.state.playedGames.includes('emailBuild')===false,'skip alone does not mark played');
+  w.closeGamePanel();
+  ok(w.__T.gameState.open===false,'closeGamePanel closes');
+  ok(w.__T.state.playedGames.includes('emailBuild')===true,'closing panel marks played (V1.1 behaviour)');
+  w.__T.gameState.id='emailBuild';
+  w.showResults(500);
+  ok(w.getBoard('emailBuild').length===1,'score saved to leaderboard');
+  w.closeGamePanel();
+
+  section('00e · achievements + unlock path');
+  ok(w.__T.state.playedGames.length===1,'one game played');
+  w.markGamePlayed('partnerCall');
+  w.markGamePlayed('onboardPack');
+  w.markGamePlayed('closeDeal');
+  w.markGamePlayed('autoFlow');
+  ok(w.__T.state.playedGames.length===5,'five games played');
+  ok(w.__T.state.signalUnlocked===false,'signal still locked at 5/6');
+  w.markGamePlayed('leadSort');
+  ok(w.__T.state.playedGames.length===6,'six games played');
+  ok(w.__T.state.signalUnlocked===true,'signalUnlocked latched at 6/6');
+  ok(w.__T.state.achievements.includes('allGames'),'allGames achievement');
+  ok(w.__T.state.achievements.includes('leadSort'),'game achievement');
+  ok(doc.getElementById('achievementsBtn').hidden===false,'achievements button revealed');
+  w.unlockAchievements();
+  ok(w.__T.state.achievements.includes('patron'),'patron achievement');
+  w.openAchievements();
+  ok(doc.getElementById('modal').classList.contains('hidden')===false,'achievements modal opens');
+  ok(doc.getElementById('modalContent').textContent.indexOf('COMPLETIONIST')>=0,'modal shows achievement');
+  w.closeModal();
+  ok(doc.getElementById('modal').classList.contains('hidden'),'modal closes');
+
+  section('00f · rooms + home reset');
+  w.openLeaderboards();
+  ok(doc.getElementById('modalKicker').textContent==='LEADERBOARDS','leaderboards modal opens');
+  ok(doc.getElementById('modalContent').textContent.indexOf('LEAD INVADERS')>=0,'leaderboards content');
+  w.closeModal();
+  w.openHome();
+  ok(w.__T.state.started===false,'home resets started');
+  ok(w.__T.state.playedGames.length===0,'home resets playedGames');
+  ok(w.__T.state.signalUnlocked===true,'home NEVER revokes signalUnlocked');
+  ok(doc.getElementById('startScreen').classList.contains('hidden')===false,'home shows start screen');
+  w.start();
+  w.__T.state.enterCount=11;
+  w.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+  w.__T.state.enterCount=12;
+  w.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+  ok(w.__T.state.achievements.includes('patron'),'patron via 12 Enter presses');
+
+  section('00g · sound toggle + hotkeys');
+  w.toggleSound();
+  ok(w.__T.state.sound===false,'sound toggles off');
+  w.toggleSound();
+  ok(w.__T.state.sound===true,'sound toggles on');
+};

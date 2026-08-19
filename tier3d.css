@@ -1,0 +1,38 @@
+/* THE ARCHIVE // V1.2 THE VAULT */
+
+.vault-root{position:fixed;inset:0;z-index:30;background:var(--bg-signal,#050a1a);color:var(--fg-signal,#e2e8f0);overflow:hidden;font-family:'Determination Mono','Courier New',monospace}
+.vault-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.vault-canvas.drag{cursor:grabbing}
+.vault-poster{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#0b132b 0%,var(--bg-signal,#050a1a) 70%)}
+.vault-poster-inner{text-align:center;padding:24px}
+.vault-poster-title{font-size:clamp(30px,6vw,64px);letter-spacing:.2em;color:var(--accent-c,#22d3ee);text-shadow:0 0 24px rgba(34,211,238,.45)}
+.vault-poster-sub{font-size:16px;letter-spacing:.18em;color:var(--muted2,#8b93a7);margin-top:14px}
+.vault-poster-hint{font-size:14px;letter-spacing:.22em;color:var(--accent-p,#a855f7);margin-top:26px;animation:tierPulse 1.6s steps(3,end) infinite}
+
+.vault-overlay{position:absolute;inset:0;pointer-events:none;z-index:31}
+.vault-title{position:absolute;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);font-size:18px;letter-spacing:.3em;color:var(--accent-c,#22d3ee);text-shadow:0 0 14px rgba(34,211,238,.4);white-space:nowrap}
+.vault-hint{position:absolute;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:13px;letter-spacing:.2em;color:var(--muted2,#8b93a7);white-space:nowrap}
+.vault-exit{position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));pointer-events:auto;z-index:32;border:2px solid var(--accent-c,#22d3ee);background:rgba(5,10,26,.85);color:var(--accent-c,#22d3ee);font-size:12px;letter-spacing:.16em;cursor:pointer;min-height:44px;padding:8px 12px;text-transform:uppercase}
+.vault-exit:hover,.vault-exit:focus-visible{background:var(--accent-c,#22d3ee);color:#050a1a}
+.vault-counter{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));right:calc(14px + env(safe-area-inset-right));font-size:13px;letter-spacing:.22em;color:var(--muted2,#8b93a7)}
+
+.vault-note{position:absolute;z-index:32;width:44px;height:44px;border:2px solid var(--accent-p,#a855f7);background:rgba(168,85,247,.15);color:var(--accent-p,#a855f7);font-size:22px;display:grid;place-items:center;pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;transform:translate(-50%,-50%)}
+.vault-note:hover{background:var(--accent-p,#a855f7);color:#050a1a}
+
+/* CSS-3D fallback */
+.vault-css{position:absolute;inset:0;perspective:1400px;display:grid;place-items:center;z-index:30;overflow:hidden}
+.vault-css-stage{position:relative;width:300px;height:300px;transform-style:preserve-3d;transition:transform .6s var(--spring,cubic-bezier(.34,1.56,.64,1))}
+.vault-css-stage.drag{transition:none}
+.vault-css-panel{position:absolute;left:50%;top:50%;width:200px;height:150px;margin:-75px 0 0 -100px;border:2px solid var(--accent-c,#22d3ee);background:rgba(5,10,26,.9);color:var(--fg-signal,#e2e8f0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center;box-shadow:0 0 24px rgba(34,211,238,.18);cursor:pointer}
+.vault-css-panel.hot{box-shadow:0 0 44px rgba(168,85,247,.55);border-color:var(--accent-p,#a855f7)}
+.vault-css-num{font-size:12px;letter-spacing:.2em;color:var(--accent-p,#a855f7)}
+.vault-css-label{font-size:20px;letter-spacing:.1em}
+.vault-css-sub{font-size:11px;color:var(--muted2,#8b93a7);letter-spacing:.06em;line-height:1.3}
+.vault-css-stars{position:absolute;inset:0;z-index:29;background-image:radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.6) 50%,transparent 51%),radial-gradient(1px 1px at 70% 60%,rgba(255,255,255,.4) 50%,transparent 51%),radial-gradient(2px 2px at 40% 80%,rgba(34,211,238,.5) 50%,transparent 51%),radial-gradient(1px 1px at 90% 20%,rgba(255,255,255,.5) 50%,transparent 51%),radial-gradient(1px 1px at 10% 70%,rgba(168,85,247,.5) 50%,transparent 51%),radial-gradient(2px 2px at 55% 15%,rgba(255,255,255,.35) 50%,transparent 51%)}
+
+@media(max-width:760px){
+  .vault-title{font-size:14px;letter-spacing:.22em}
+  .vault-hint{display:none}
+  .vault-counter{font-size:11px}
+  .vault-exit{min-height:40px;font-size:11px}
+}

@@ -27,16 +27,26 @@ python -m http.server
 - Sound on/off toggle with retro bleeps and ambient loop.
 - Progress is saved locally in the browser (`localStorage`).
 - **V1.1 mini games** — six short playable stories that appear when the Guide touches their topic: **Lead Invaders**, **Email Build**, **Partner Call**, **Onboard Pack**, **Close the Deal** and **Auto Flow**. Each is skippable, scores with name entry, and keeps a top-10 leaderboard per game. All six must be lived through before the final page offers contact.
+- **V1.2 SIGNAL tier** — after all six base games, a button appears in the lower-left corner. It opens **The Rerun**: the same stories rewritten in a second visual style, with four new games (**Signal Relay**, **Cable Triage**, **Signal Chain**, **Async Batch**).
+- **V1.2 VAULT tier** — complete the rerun to unlock **The Vault**, a 3D version of the archive (three.js helix of 29 chapters and 6 rooms) with a reduced-motion poster and a CSS-3D fallback. `S` and `V` switch tiers, and progress is never revoked.
 
 ## Structure
 
 ```
-index.html   — app shell and start screen
-styles.css   — monochrome pixel UI
-games.css    — V1.1 mini game UI
-script.js    — dialogue data, state, rooms and audio
-games.js     — V1.1 mini game engine and leaderboards
-assets/      — favicon
+index.html    — app shell and start screen
+styles.css    — monochrome pixel UI + tier tokens
+games.css     — V1.1 mini game UI
+games-alt.css — V1.2 signal game UI
+script.js     — dialogue data, state, rooms and audio
+story-data.js — V1.2 signal rerun data
+tier.js       — V1.2 tier switching, button and signal plumbing
+games.js      — V1.1 mini game engine and leaderboards
+games-alt.js  — V1.2 signal games
+tier-loader.js— vault engine ladder (poster / css3d / three.js)
+tier3d.js     — V1.2 3D vault engine
+tier3d.css    — vault UI
+assets/       — favicon, vendored three@0.160.1 (MIT)
+tests/        — node regression + V1.2 harnesses (`node tests/run.js`)
 ```
 
 ## Design notes

@@ -1,0 +1,56 @@
+/* THE ARCHIVE // V1.2 SIGNAL GAMES */
+
+.sr-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:420px;width:100%;margin:0 auto}
+.sr-cell{aspect-ratio:1/1;border:2px solid #555;background:#000;position:relative}
+.sr-cell.path{border-color:var(--accent-c,#22d3ee);background:rgba(34,211,238,.08)}
+.sr-cell.current{background:var(--accent-p,#a855f7);border-color:var(--accent-p,#a855f7)}
+.sr-cell.current::after{content:'';position:absolute;inset:20%;border:2px solid #000}
+.sr-cell.start{background:#fff;border-color:#fff}
+.sr-cell.target{background:#fff;border-color:#fff}
+.sr-cell.target::after{content:'';position:absolute;inset:25%;border:2px solid #000}
+.sr-cell.wall{border-color:#222;background:#111}
+.sr-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:52px}
+.sr-relay{border:2px solid var(--accent-c,#22d3ee);background:#000;color:var(--accent-c,#22d3ee);padding:10px 14px;font-size:16px;cursor:pointer;min-height:44px}
+.sr-relay:hover:not(:disabled),.sr-relay:focus-visible{background:var(--accent-c,#22d3ee);color:#000}
+
+.ct-rules{display:grid;gap:4px;border:2px solid var(--accent-p,#a855f7);padding:10px;margin-top:10px}
+.ct-rule{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:14px;letter-spacing:.08em;align-items:center;border-bottom:1px dashed #333;padding:5px 2px}
+.ct-rule:last-child{border-bottom:0}
+.ct-light{display:inline-block;width:14px;height:14px;border:2px solid #fff;background:#000}
+.ct-light.red{background:#e3342f;border-color:#e3342f}
+.ct-light.green{background:#38c172;border-color:#38c172}
+.ct-light.yellow{background:#f2c024;border-color:#f2c024}
+.ct-pat.solid::after{content:'— SOLID';color:#888}
+.ct-pat.blink::after{content:'· BLINK';color:#888}
+.ct-cut{color:var(--accent-c,#22d3ee);text-align:right}
+.ct-box{display:flex;gap:16px;align-items:center;justify-content:center;border:2px solid #fff;padding:16px;margin:10px 0}
+.ct-light-big{width:34px;height:34px;border:3px solid #fff;background:#000}
+.ct-light-big.red{background:#e3342f;border-color:#e3342f}
+.ct-light-big.green{background:#38c172;border-color:#38c172}
+.ct-light-big.yellow{background:#f2c024;border-color:#f2c024}
+.ct-light-big.blink{animation:ctBlink .6s steps(2,end) infinite}
+.ct-pat-big{font-size:20px;letter-spacing:.1em}
+.ct-cables{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.ct-cable{border:2px solid #fff;background:#000;color:#fff;padding:10px 16px;font-size:16px;cursor:pointer;min-height:44px;letter-spacing:.06em}
+.ct-cable:hover:not(:disabled){background:#fff;color:#000}
+.ct-cable.wrong{outline:3px solid #fff;outline-offset:2px;animation:gShake .18s steps(2,end)}
+@keyframes ctBlink{50%{opacity:.25}}
+
+.sc-ring{position:relative;width:min(320px,80vw);aspect-ratio:1/1;margin:14px auto;display:grid;place-items:center}
+.sc-node{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(calc(var(--sc-i)*60deg)) translateY(calc(-1*min(150px,42vw))) rotate(calc(-1*var(--sc-i)*60deg));width:56px;height:56px;border:2px solid #fff;background:#000;color:#fff;font-size:22px;cursor:pointer;display:grid;place-items:center;padding:0;z-index:2}
+.sc-node .sc-label{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;color:var(--accent-c,#22d3ee);white-space:nowrap}
+.sc-node.lit{background:var(--accent-c,#22d3ee);border-color:var(--accent-c,#22d3ee);color:#000;box-shadow:0 0 18px var(--accent-c,#22d3ee)}
+.sc-node:hover:not(:disabled){background:#fff;color:#000}
+.sc-ring::before{content:'';position:absolute;inset:0;border:2px solid #555;border-radius:50%}
+.sc-ring::after{content:'';position:absolute;inset:12%;border:1px dashed #333;border-radius:50%}
+
+.ab-word{border:2px solid var(--accent-c,#22d3ee);background:#000;color:#fff;font-size:30px;letter-spacing:.12em;text-align:center;padding:16px;margin:10px 0;min-height:70px;display:flex;align-items:center;justify-content:center}
+.ab-input{border:2px solid #fff;background:#000;color:#fff;padding:10px 12px;font-size:20px;width:min(340px,100%);text-transform:uppercase;text-align:center;letter-spacing:.1em}
+.ab-input::placeholder{color:#555}
+
+@media(max-width:760px){
+  .sc-node{width:46px;height:46px;font-size:18px}
+  .sc-node .sc-label{font-size:9px}
+  .ct-rule{font-size:12px}
+  .ab-word{font-size:24px;min-height:58px}
+}

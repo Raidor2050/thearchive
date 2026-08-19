@@ -66,6 +66,7 @@ function clearKeys(){gameState.keys.forEach(fn=>window.removeEventListener('keyd
 
 function startGame(id){
   if(gameState.open)return;
+  if(typeof GAMES_ALT!=='undefined'&&GAMES_ALT[id]&&typeof startSignalGame==='function'){startSignalGame(id);return}
   const g=GAMES[id];if(!g)return;
   if(typeof closeModal==='function')closeModal();
   if(typeof closeNav==='function')closeNav();
@@ -96,7 +97,8 @@ function stopLoop(){clearKeys();if(gameState.raf){cancelAnimationFrame(gameState
 function showResults(score){
   stopTips();stopLoop();
   gameState.results=true;
-  const g=GAMES[gameState.id];
+  const g=GAMES[gameState.id]||(typeof GAMES_ALT!=='undefined'?GAMES_ALT[gameState.id]:null);
+  if(!g)return;
   const body=g$('gamePanel').querySelector('.game-body');
   body.innerHTML='';
   if(score==null){
@@ -157,7 +159,7 @@ function skipGame(){if(!gameState.open)return;stopTips();stopLoop();showResults(
 function closeGamePanel(){stopTips();stopLoop();const id=gameState.id;const panel=g$('gamePanel');const card=g$('dialogueCard');panel.classList.remove('open');card.classList.remove('game-mode');const nav=g$('iconNav');if(nav)nav.classList.remove('nav-side');gameState.generation++;const gen=gameState.generation;setTimeout(()=>{if(gen===gameState.generation)panel.innerHTML=''},500);gameState.open=false;gameState.id=null;gameState.results=false;if(id&&typeof markGamePlayed==='function')markGamePlayed(id)}
 
 function openLeaderboard(id){
-  const g=GAMES[id];if(!g)return;
+  const g=GAMES[id]||(typeof GAMES_ALT!=='undefined'?GAMES_ALT[id]:null);if(!g)return;
   const b=getBoard(id).slice(0,10);
   const rows=b.length?`<div class="lb">${b.map((e,i)=>`<div class="lb-row"><span class="lb-rank">${String(i+1).padStart(2,'0')}</span><span class="lb-name">${esc(e.name)}</span><span class="lb-score">${e.score}</span></div>`).join('')}</div>`:'<p class="story-small">No scores yet — the archive only keeps what you run.</p>';
   openModal('LEADERBOARD',g.title+' · TOP SCORES',rows);

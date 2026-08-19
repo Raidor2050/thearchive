@@ -134,16 +134,50 @@ const ACHIEVEMENTS={
   patron:{name:'ARCHIVE PATRON',desc:'Pressed forward twelve times.',icon:'♛'}
 };
 
-const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,achievements:[],playerName:'',leaderboard:{},playedGames:[]};
+const state={started:false,index:0,history:[],typing:false,timer:null,charIndex:0,speed:18,sound:true,xp:0,found:[],choices:[],enterCount:0,achievementsUnlocked:false,achievements:[],playerName:'',leaderboard:{},playedGames:[],schemaVersion:2,tier:'archive',variant:'signal',signalIndex:0,signalHistory:[],signalStarted:false,signalReachedFinal:false,signalFlags:{},signalComplete:false,signalXp:0,signalFound:[],signalEnterCount:0,signalAchievementsUnlocked:false,signalAchievements:[],signalUnlocked:false,vaultUnlocked:false,vaultVisited:false,vaultProgress:0,vaultQuality:'auto'};
 let audioCtx=null,ambientTimer=null,autoSeq=0;
 const $=id=>document.getElementById(id);
 const GAME_ORDER=['leadSort','emailBuild','partnerCall','onboardPack','closeDeal','autoFlow'];
 function remainingGames(){return GAME_ORDER.filter(id=>!state.playedGames.includes(id))}
-function markGamePlayed(id){if(id&&!state.playedGames.includes(id)){state.playedGames.push(id);save();unlockAchievement(id);if(state.playedGames.length>=GAME_ORDER.length)unlockAchievement('allGames')}}
-const ui={start:$('startScreen'),begin:$('beginBtn'),experience:$('experience'),chapter:$('microLine'),card:$('dialogueCard'),speaker:$('speakerName'),sceneMark:$('sceneMark'),text:$('dialogueText'),continue:$('continueBtn'),choices:$('choices'),quests:$('questsBtn'),toolkit:$('toolkitBtn'),profile:$('profileBtn'),contact:$('contactBtn'),home:$('homeBtn'),achievements:$('achievementsBtn'),back:$('backBtn'),sound:$('soundBtn'),save:$('saveState'),modal:$('modal'),backdrop:$('modalBackdrop'),modalCard:$('modalCard'),modalKicker:$('modalKicker'),modalSub:$('modalSub'),modalContent:$('modalContent'),modalClose:$('modalClose'),toast:$('toast'),gamePanel:$('gamePanel'),gamesBtn:$('gamesBtn'),miniBtn:$('miniBtn'),nav:$('iconNav'),navToggle:$('navToggle'),navBackdrop:$('navBackdrop')};
-function save(){try{localStorage.setItem('raiyan-ruby-ui-v11',JSON.stringify({...state,timer:null}))}catch{}ui.save.textContent=state.achievementsUnlocked?'ACHIEVEMENTS':'LOCAL';ui.miniBtn.hidden=state.playedGames.length===0}
-function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}'));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}if(!Array.isArray(state.playedGames))state.playedGames=[];if(!Array.isArray(state.achievements))state.achievements=[]}catch{}}
-function current(){return narrativeScenes[state.index]}
+function markGamePlayed(id){if(id&&!state.playedGames.includes(id)){state.playedGames.push(id);save();unlockAchievement(id);if(state.playedGames.length>=GAME_ORDER.length){unlockAchievement('allGames');if(!state.signalUnlocked){state.signalUnlocked=true;save();if(typeof syncTierBtn==='function')syncTierBtn();toast('NEW SIGNAL DETECTED · LOWER LEFT CORNER')}}}}
+const ui={start:$('startScreen'),begin:$('beginBtn'),experience:$('experience'),chapter:$('microLine'),card:$('dialogueCard'),speaker:$('speakerName'),sceneMark:$('sceneMark'),text:$('dialogueText'),continue:$('continueBtn'),choices:$('choices'),quests:$('questsBtn'),toolkit:$('toolkitBtn'),profile:$('profileBtn'),contact:$('contactBtn'),home:$('homeBtn'),achievements:$('achievementsBtn'),back:$('backBtn'),sound:$('soundBtn'),save:$('saveState'),modal:$('modal'),backdrop:$('modalBackdrop'),modalCard:$('modalCard'),modalKicker:$('modalKicker'),modalSub:$('modalSub'),modalContent:$('modalContent'),modalClose:$('modalClose'),toast:$('toast'),gamePanel:$('gamePanel'),gamesBtn:$('gamesBtn'),miniBtn:$('miniBtn'),nav:$('iconNav'),navToggle:$('navToggle'),navBackdrop:$('navBackdrop'),tierBtn:$('tierBtn'),tierVeil:$('tierVeil')};
+const SIGNAL_FLAG_IDS=['altRouteRelay','altCableTriage','altSignalChain','altAsyncBatch'];
+const TIERS=['archive','signal','vault'];
+function sanitizeSignalFlags(f){const out={};if(f&&typeof f==='object')for(const k of SIGNAL_FLAG_IDS)if(f[k]===true)out[k]=true;return out}
+function migrateFromV11(raw,v){
+  const out={...raw};
+  if(!v||v<2){
+    if(Array.isArray(raw.playedGames)&&raw.playedGames.length>=GAME_ORDER.length)out.signalUnlocked=true;
+    out.schemaVersion=2;
+  }
+  out.signalFlags=sanitizeSignalFlags(raw.signalFlags);
+  if(!Array.isArray(out.signalHistory))out.signalHistory=[];
+  if(!Array.isArray(out.signalFound))out.signalFound=[];
+  if(!Array.isArray(out.signalAchievements))out.signalAchievements=[];
+  if(!Array.isArray(out.achievements))out.achievements=[];
+  if(!Array.isArray(out.playedGames))out.playedGames=[];
+  if(!Number.isInteger(out.signalIndex)||out.signalIndex<0)out.signalIndex=0;
+  if(typeof out.signalStarted!=='boolean')out.signalStarted=false;
+  if(typeof out.signalReachedFinal!=='boolean')out.signalReachedFinal=false;
+  if(typeof out.signalComplete!=='boolean')out.signalComplete=false;
+  if(typeof out.signalUnlocked!=='boolean')out.signalUnlocked=false;
+  if(typeof out.vaultUnlocked!=='boolean')out.vaultUnlocked=false;
+  if(typeof out.vaultVisited!=='boolean')out.vaultVisited=false;
+  if(typeof out.tier!=='string'||!TIERS.includes(out.tier))out.tier='archive';
+  if(typeof out.variant!=='string')out.variant='signal';
+  if(typeof out.signalXp!=='number')out.signalXp=0;
+  if(typeof out.signalEnterCount!=='number')out.signalEnterCount=0;
+  if(typeof out.signalAchievementsUnlocked!=='boolean')out.signalAchievementsUnlocked=false;
+  if(typeof out.vaultProgress!=='number'||out.vaultProgress<0||out.vaultProgress>1)out.vaultProgress=0;
+  if(!['auto','low','off'].includes(out.vaultQuality))out.vaultQuality='auto';
+  return out;
+}
+function save(){try{localStorage.setItem('raiyan-ruby-ui-v11',JSON.stringify({...state,timer:null}))}catch{}ui.save.textContent=state.achievementsUnlocked?'ACHIEVEMENTS':'LOCAL';ui.miniBtn.hidden=state.playedGames.length===0;if(typeof syncTierBtn==='function')syncTierBtn()}
+function load(){try{const raw=JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}');Object.assign(state,migrateFromV11(raw,raw.schemaVersion||1));if(!narrativeScenes[state.index]){state.index=0;state.history=[]}if(!SIGNAL_SCENES[state.signalIndex]){state.signalIndex=0;state.signalHistory=[]}if(!Array.isArray(state.playedGames))state.playedGames=[];if(!Array.isArray(state.achievements))state.achievements=[]}catch{}}
+function sceneList(){return state.tier==='signal'?SIGNAL_SCENES:narrativeScenes}
+function sceneIndex(){return state.tier==='signal'?state.signalIndex:state.index}
+function sceneHistory(){return state.tier==='signal'?state.signalHistory:state.history}
+function current(){return sceneList()[sceneIndex()]}
 function textFor(scene){return typeof scene.text==='function'?scene.text():scene.text}
 function ensureAudio(){if(!state.sound)return;try{audioCtx ||= new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch{}}
 function advanceSound(){ensureAudio();if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.setValueAtTime(480,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(760,audioCtx.currentTime+.08);g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.02,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.1);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.11)}
@@ -151,12 +185,17 @@ function choiceSound(){ensureAudio();if(!audioCtx)return;const o=audioCtx.create
 function startAmbient(){if(!state.sound||ambientTimer)return;ensureAudio();if(!audioCtx)return;const notes=[146.83,174.61,196,220,196];let i=0;ambientTimer=setInterval(()=>{if(!state.sound||!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=notes[i++%notes.length];g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0035,audioCtx.currentTime+.18);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+2.1);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+2.15)},2400)}
 function stopAmbient(){clearInterval(ambientTimer);ambientTimer=null}
 function toast(msg){ui.toast.textContent=msg;ui.toast.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>ui.toast.classList.remove('show'),1400)}
-function discover(n){if(state.found.includes(n))return;state.found.push(n);state.xp=Math.min(8,state.xp+1);save();toast('ARCHIVE NOTE FOUND  ·  XP +1');choiceSound()}
+function discover(n){
+  if(state.tier==='signal'){
+    if(state.signalFound.includes(n))return;
+    state.signalFound.push(n);state.signalXp=Math.min(8,state.signalXp+1);save();toast('SIGNAL NOTE FOUND  ·  XP +1');choiceSound();return;
+  }
+  if(state.found.includes(n))return;state.found.push(n);state.xp=Math.min(8,state.xp+1);save();toast('ARCHIVE NOTE FOUND  ·  XP +1');choiceSound()}
 function renderChoices(){ui.choices.innerHTML='';current().choices.forEach((c,i)=>{const b=document.createElement('button');b.className='choice-btn';b.type='button';b.textContent=c.label;b.onclick=()=>choose(i,c.next);ui.choices.appendChild(b)});ui.card.classList.add('has-choices')}
-function renderScene(){clearInterval(state.timer);state.typing=true;state.charIndex=0;const s=current();ui.chapter.textContent=s.chapter;ui.speaker.textContent=s.speaker;ui.sceneMark.textContent=`[${String(state.index+1).padStart(2,'0')}]`;ui.text.textContent='';ui.choices.innerHTML='';ui.card.classList.remove('ready','has-choices');const chars=[...textFor(s)];state.timer=setInterval(()=>{state.charIndex++;ui.text.textContent=chars.slice(0,state.charIndex).join('');if(state.charIndex>=chars.length)finishTyping()},state.speed)}
-function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!state.playedGames.includes(gid)){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(gid,s.id)},250)}else if(s.choices){autoSeq=0}else{autoSeq++;if(s.next&&autoSeq>=4){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;if(!state.typing)next()},1600)}}save()}
-function choose(i,next){state.choices.push({scene:current().id,choice:i});choiceSound();if(next==='contact'){openContact();save();return}goto(next)}
-function goto(id){const idx=narrativeScenes.findIndex(s=>s.id===id);if(idx<0)return;if(id!==current().id)state.history.push(state.index);state.index=idx;advanceSound();renderScene();save()}
+function renderScene(){clearInterval(state.timer);state.typing=true;state.charIndex=0;const s=current();ui.chapter.textContent=s.chapter;ui.speaker.textContent=s.speaker;ui.sceneMark.textContent=`[${String(sceneIndex()+1).padStart(2,'0')}]`;ui.text.textContent='';ui.choices.innerHTML='';ui.card.classList.remove('ready','has-choices');const chars=[...textFor(s)];state.timer=setInterval(()=>{state.charIndex++;ui.text.textContent=chars.slice(0,state.charIndex).join('');if(state.charIndex>=chars.length)finishTyping()},state.speed)}
+function finishTyping(){clearInterval(state.timer);state.timer=null;state.typing=false;const s=current();ui.text.textContent=textFor(s);ui.card.classList.add('ready');if(s.choices)renderChoices();if(Number.isInteger(s.secret))discover(s.secret);if(state.tier==='signal'&&s.id==='signalFinal'&&typeof latchSignalFinal==='function')latchSignalFinal();const gid=typeof s.game==='function'?s.game():s.game;if(gid&&!(state.tier==='signal'?state.signalFlags[gid]:state.playedGames.includes(gid))){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;startGame(gid,s.id)},250)}else if(s.choices){autoSeq=0}else{autoSeq++;if(s.next&&autoSeq>=4){autoSeq=0;setTimeout(()=>{if(isGameBlocking())return;if(current().id!==s.id)return;if(!state.typing)next()},1600)}}save()}
+function choose(i,next){state.choices.push({scene:current().id,choice:i});choiceSound();if(next==='contact'){openContact();save();return}if(next==='__archive__'){if(typeof setTier==='function')setTier('archive');save();return}goto(next)}
+function goto(id){const list=sceneList();const idx=list.findIndex(s=>s.id===id);if(idx<0)return;if(id!==current().id)sceneHistory().push(sceneIndex());if(state.tier==='signal')state.signalIndex=idx;else state.index=idx;advanceSound();renderScene();save()}
 function unlockAchievement(id){
   if(!ACHIEVEMENTS[id])return;
   if(!state.achievements)state.achievements=[];
@@ -171,13 +210,22 @@ function unlockAchievement(id){
 }
 function unlockAchievements(){unlockAchievement('patron')}
 function next(){if(state.typing){finishTyping();advanceSound();return}const s=current();const gid=typeof s.game==='function'?s.game():s.game;const t=typeof s.next==='function'?s.next():s.next;if(gid&&!state.playedGames.includes(gid)&&t!==s.id){if(!isGameBlocking())startGame(gid,s.id);return}if(s.choices)return;if(t)goto(t);else toast('END OF FILE')}
-function back(){if(state.typing){finishTyping();return}const prev=state.history.pop();if(prev===undefined)return;autoSeq=0;state.index=prev;advanceSound();renderScene();save()}
-function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.achievements=[];state.playedGames=[];autoSeq=0;ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
+function back(){if(state.typing){finishTyping();return}const prev=sceneHistory().pop();if(prev===undefined)return;autoSeq=0;if(state.tier==='signal')state.signalIndex=prev;else state.index=prev;advanceSound();renderScene();save()}
+function openHome(){closeGamePanel();closeModal();clearInterval(state.timer);state.started=false;state.index=0;state.history=[];state.xp=0;state.found=[];state.enterCount=0;state.achievementsUnlocked=false;state.achievements=[];state.playedGames=[];state.signalIndex=0;state.signalHistory=[];state.signalStarted=false;state.signalReachedFinal=false;state.signalFlags={};state.signalXp=0;state.signalFound=[];state.signalEnterCount=0;state.signalAchievementsUnlocked=false;state.vaultVisited=false;autoSeq=0;if(typeof setTier==='function')setTier('archive',true);ui.achievements.hidden=true;ui.achievements.classList.remove('unlocked');save();ui.experience.classList.add('hidden');ui.start.classList.remove('hidden');ui.begin.focus();stopAmbient()}
 function openModal(kicker,sub,html){closeNav();ui.modalKicker.textContent=kicker;ui.modalSub.textContent=sub;ui.modalContent.innerHTML=html;ui.modal.classList.remove('hidden');document.body.classList.add('modal-open');if(ui.lbFloat&&kicker!=='CONTACT'&&kicker!=='LEADERBOARDS')ui.lbFloat.classList.add('hidden');requestAnimationFrame(()=>ui.modalCard.focus())}
 function closeModal(){ui.modal.classList.add('hidden');document.body.classList.remove('modal-open');if(ui.lbFloat)ui.lbFloat.classList.add('hidden')}
 function closeNav(){if(ui.nav)ui.nav.classList.remove('open');if(ui.navBackdrop)ui.navBackdrop.classList.remove('show');if(ui.navToggle)ui.navToggle.setAttribute('aria-expanded','false')}
 function toggleNav(){const open=ui.nav.classList.toggle('open');if(ui.navBackdrop)ui.navBackdrop.classList.toggle('show',open);if(ui.navToggle)ui.navToggle.setAttribute('aria-expanded',String(open))}
 function openAchievements(){
+  if(state.tier==='signal'){
+    const list=state.signalAchievements||[];
+    const cards=Object.keys(SIGNAL_ACHIEVEMENTS).map(id=>{
+      const a=SIGNAL_ACHIEVEMENTS[id],done=list.includes(id);
+      return `<article class="ach${done?' done':''}"><div class="ach-mark">${a.icon}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div></article>`;
+    }).join('');
+    openModal('SIGNAL ACHIEVEMENTS','The rerun kept its own score.',`<div class="ach-modal"><p class="story-lead">You held the line through every chapter again.</p><div class="ach-grid">${cards}</div><p class="story-small">${list.length} / ${Object.keys(SIGNAL_ACHIEVEMENTS).length} signal achievements · ${state.signalFound.length} signal notes · ${state.signalXp} XP.</p><p class="story-small">The number is fake. The rerun is not.</p></div>`);
+    return;
+  }
   const ach=state.achievements||[];
   const cards=Object.keys(ACHIEVEMENTS).map(id=>{
     const a=ACHIEVEMENTS[id],done=ach.includes(id);
@@ -195,5 +243,5 @@ function toggleSound(){state.sound=!state.sound;ui.sound.textContent=state.sound
 function start(){if(state.started)return;state.started=true;autoSeq=0;ui.start.classList.add('hidden');ui.experience.classList.remove('hidden');ensureAudio();startAmbient();renderScene();save()}
 ui.begin.onclick=start;ui.continue.onclick=e=>{e.stopPropagation();next()};ui.card.onclick=e=>{if(isGameBlocking())return;if(e.target.closest('.choice-btn'))return;next()};ui.back.onclick=back;ui.sound.onclick=toggleSound;ui.quests.onclick=openQuests;ui.toolkit.onclick=openToolkit;ui.profile.onclick=openProfile;ui.contact.onclick=openContact;ui.home.onclick=openHome;ui.achievements.onclick=openAchievements;ui.gamesBtn.onclick=openGamesRoom;ui.miniBtn.onclick=openGamesRoom;ui.modalClose.onclick=closeModal;ui.backdrop.onclick=closeModal;ui.navToggle.onclick=toggleNav;ui.navBackdrop.onclick=closeNav;ui.nav.addEventListener('click',e=>{if(e.target.closest('.icon-btn'))closeNav()});
 ui.lbFloat=el('button','lb-float hidden','LEADERBOARDS');ui.lbFloat.type='button';ui.lbFloat.onclick=openLeaderboards;document.body.appendChild(ui.lbFloat);
-window.addEventListener('keydown',e=>{if(isGameBlocking())return;if(e.key==='Enter'&&!state.started){e.preventDefault();start();return}if(!ui.modal.classList.contains('hidden')){if(e.key==='Escape'){e.preventDefault();closeModal()}return}if(!state.started)return;if(e.key==='Enter'){e.preventDefault();state.enterCount++;if(state.enterCount>=12)unlockAchievements();next()}else if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault();back()}else if(/^[1-3]$/.test(e.key)&&current().choices){const i=Number(e.key)-1;if(current().choices[i])choose(i,current().choices[i].next)}else if(e.key.toLowerCase()==='q')openQuests();else if(e.key.toLowerCase()==='t')openToolkit();else if(e.key.toLowerCase()==='p')openProfile();else if(e.key.toLowerCase()==='c')openContact();else if(e.key.toLowerCase()==='h')openHome();else if(e.key.toLowerCase()==='g')openGamesRoom()});
+window.addEventListener('keydown',e=>{if(isGameBlocking())return;if(e.key==='Enter'&&!state.started){e.preventDefault();start();return}if(!ui.modal.classList.contains('hidden')){if(e.key==='Escape'){e.preventDefault();closeModal()}return}if(!state.started)return;if(state.tier==='vault')return;if(e.key==='Enter'){e.preventDefault();state.enterCount++;if(state.enterCount>=12)unlockAchievements();next()}else if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault();back()}else if(/^[1-3]$/.test(e.key)&&current().choices){const i=Number(e.key)-1;if(current().choices[i])choose(i,current().choices[i].next)}else if(e.key.toLowerCase()==='q')openQuests();else if(e.key.toLowerCase()==='t')openToolkit();else if(e.key.toLowerCase()==='p')openProfile();else if(e.key.toLowerCase()==='c')openContact();else if(e.key.toLowerCase()==='h')openHome();else if(e.key.toLowerCase()==='g')openGamesRoom()});
 load();ui.sound.textContent=state.sound?'SOUND ON':'SOUND OFF';ui.sound.setAttribute('aria-pressed',String(state.sound));ui.miniBtn.hidden=state.playedGames.length===0;if(state.started){ui.start.classList.add('hidden');ui.experience.classList.remove('hidden');if(state.achievementsUnlocked||(state.achievements&&state.achievements.length))ui.achievements.hidden=false;ensureAudio();startAmbient();renderScene()}

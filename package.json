@@ -1,0 +1,12 @@
+{
+  "name": "thearchive-v1.2",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Regression + V1.2 harnesses for The Archive",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "dependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

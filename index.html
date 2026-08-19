@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
+<script>
+(function(){try{var s=JSON.parse(localStorage.getItem('raiyan-ruby-ui-v11')||'{}');if(s.signalUnlocked||(s.playedGames&&s.playedGames.length>=6))document.documentElement.classList.add('tier-ready');if(s.vaultUnlocked)document.documentElement.classList.add('vault-ready')}catch(e){}})();
+</script>
 <meta name="description" content="Raiyan Kabir — an interactive monochrome archive of affiliate marketing, partnerships, growth operations, data and campaign optimization.">
-<title>V1.1 // THE ARCHIVE</title>
+<title>V1.2 // THE ARCHIVE</title>
 <link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="https://cartr.gitlab.io/undertale-fonts/webfonts/stylesheet.css">
 <link rel="stylesheet" href="styles.css">
@@ -15,7 +18,7 @@
 <main id="app" class="app">
   <section id="startScreen" class="start-screen" aria-label="Start screen">
     <button id="beginBtn" class="begin-btn" type="button" aria-label="Press Enter to begin the archive experience">Press Enter</button>
-    <div class="start-version" aria-hidden="true">V1.1</div>
+    <div class="start-version" aria-hidden="true">V1.2</div>
   </section>
 
   <section id="experience" class="experience hidden" aria-label="Interactive portfolio experience">
@@ -63,6 +66,10 @@
   </section>
 </main>
 
+<button id="tierBtn" class="tier-btn" type="button" hidden>SIGNAL</button>
+<div id="tierVeil" class="tier-veil" aria-hidden="true"></div>
+<div id="vaultRoot" class="vault-root hidden" aria-label="The Vault"></div>
+
 <aside id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Archive panel">
   <button id="modalBackdrop" class="modal-backdrop" type="button" aria-label="Close panel"></button>
   <section id="modalCard" class="modal-card" tabindex="-1">
@@ -79,6 +86,10 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="games.js"></script>
+<script src="story-data.js"></script>
 <script src="script.js"></script>
+<script src="tier.js"></script>
+<script src="games-alt.js"></script>
+<script src="tier-loader.js"></script>
 </body>
 </html>
