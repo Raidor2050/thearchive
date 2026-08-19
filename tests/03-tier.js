@@ -18,9 +18,14 @@ module.exports=async function(h){
   w.markGamePlayed('partnerCall');w.markGamePlayed('onboardPack');
   w.markGamePlayed('closeDeal');w.markGamePlayed('autoFlow');
   const btn=doc.getElementById('tierBtn');
-  ok(btn.hidden===false,'tierBtn shown after 6/6');
+  ok(btn.hidden===true,'tierBtn still hidden at 6/6 (needs contact)');
+  ok(w.__T.state.signalUnlocked===false,'signalUnlocked false at 6/6');
+  w.openContact();
+  ok(btn.hidden===false,'tierBtn shown after contact popup');
+  ok(w.__T.state.signalUnlocked===true,'signalUnlocked latched at contact');
   ok(btn.textContent==='SIGNAL · 0/4','label SIGNAL · 0/4');
   ok(btn.classList.contains('pulse')===false,'no pulse until vault');
+  w.closeModal();
   w.setTier('signal');
   ok(w.__T.state.tier==='signal','signal enter allowed');
   ok(doc.body.getAttribute('data-tier')==='signal','body data-tier signal');

@@ -69,7 +69,12 @@ module.exports=async function(h){
   ok(w.__T.state.signalUnlocked===false,'signal still locked at 5/6');
   w.markGamePlayed('leadSort');
   ok(w.__T.state.playedGames.length===6,'six games played');
-  ok(w.__T.state.signalUnlocked===true,'signalUnlocked latched at 6/6');
+  ok(w.__T.state.signalUnlocked===false,'signal still locked at 6/6 (needs contact)');
+  w.openContact();
+  ok(w.__T.state.signalUnlocked===true,'signalUnlocked latched at contact popup');
+  ok(w.__T.state.contactReached===true,'contactReached latched');
+  ok(doc.getElementById('tierBtn').hidden===false,'tier button appears after contact');
+  w.closeModal();
   ok(w.__T.state.achievements.includes('allGames'),'allGames achievement');
   ok(w.__T.state.achievements.includes('leadSort'),'game achievement');
   ok(doc.getElementById('achievementsBtn').hidden===false,'achievements button revealed');
@@ -90,6 +95,7 @@ module.exports=async function(h){
   ok(w.__T.state.started===false,'home resets started');
   ok(w.__T.state.playedGames.length===0,'home resets playedGames');
   ok(w.__T.state.signalUnlocked===true,'home NEVER revokes signalUnlocked');
+  ok(w.__T.state.contactReached===true,'home NEVER revokes contactReached');
   ok(doc.getElementById('startScreen').classList.contains('hidden')===false,'home shows start screen');
   w.start();
   w.__T.state.enterCount=11;

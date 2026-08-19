@@ -10,7 +10,11 @@ module.exports=async function(h){
   }
   {
     const {window}=h.loadPage({preset:JSON.stringify({playedGames:['a','b','c','d','e','f']})});
-    ok(window.document.documentElement.classList.contains('tier-ready'),'tier-ready set via 6 playedGames backfill');
+    ok(window.document.documentElement.classList.contains('tier-ready')===false,'6 playedGames alone no longer grants tier-ready');
+  }
+  {
+    const {window}=h.loadPage({preset:JSON.stringify({contactReached:true})});
+    ok(window.document.documentElement.classList.contains('tier-ready'),'tier-ready set via contactReached');
   }
   {
     const {window}=h.loadPage({preset:JSON.stringify({vaultUnlocked:true,signalUnlocked:true})});

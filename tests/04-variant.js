@@ -38,6 +38,7 @@ const ids=new Set();
   w.markGamePlayed('leadSort');w.markGamePlayed('emailBuild');
   w.markGamePlayed('partnerCall');w.markGamePlayed('onboardPack');
   w.markGamePlayed('closeDeal');w.markGamePlayed('autoFlow');
+  w.openContact();w.closeModal();
   w.setTier('signal');
   ok(w.current().id==='sig1','signal current at sig1');
   w.goto('sig5');

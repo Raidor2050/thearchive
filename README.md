@@ -27,7 +27,7 @@ python -m http.server
 - Sound on/off toggle with retro bleeps and ambient loop.
 - Progress is saved locally in the browser (`localStorage`).
 - **V1.1 mini games** — six short playable stories that appear when the Guide touches their topic: **Lead Invaders**, **Email Build**, **Partner Call**, **Onboard Pack**, **Close the Deal** and **Auto Flow**. Each is skippable, scores with name entry, and keeps a top-10 leaderboard per game. All six must be lived through before the final page offers contact.
-- **V1.2 SIGNAL tier** — after all six base games, a button appears in the lower-left corner. It opens **The Rerun**: the same stories rewritten in a second visual style, with four new games (**Signal Relay**, **Cable Triage**, **Signal Chain**, **Async Batch**).
+- **V1.2 SIGNAL tier** — when the user reaches the contact popup (end of the story, the contact icon button, or the `C` hotkey), a button appears in the lower-left corner. It opens **The Rerun**: the same stories rewritten in a second visual style, with four new games (**Signal Relay**, **Cable Triage**, **Signal Chain**, **Async Batch**).
 - **V1.2 VAULT tier** — complete the rerun to unlock **The Vault**, a 3D version of the archive (three.js helix of 29 chapters and 6 rooms) with a reduced-motion poster and a CSS-3D fallback. `S` and `V` switch tiers, and progress is never revoked.
 
 ## Structure
